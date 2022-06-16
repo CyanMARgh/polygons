@@ -12,9 +12,11 @@ int main() {
 	};
 	std::vector<PointData> points = {};
 
-	float pointRad = 3, winSize = 800;
-	sf::CircleShape point(pointRad);
+	float pointRad = 3, winSize = 800, centerRad = 10;
+	sf::CircleShape point(pointRad), center(centerRad);
 	point.setOrigin(pointRad, pointRad);
+	center.setOrigin(centerRad, centerRad);
+	center.setFillColor(sf::Color(255, 255, 255));
 
 	Poly poly;
 	MonotonicZones mz;
@@ -50,11 +52,10 @@ int main() {
 		switch(state) {
 		case BUILD:
 			poly.DrawPoly(window);
-			// if(poly.size > 2) {
-			// 	vec2 center = poly.MassCenter();
-			// 	centerCircle.setPosition(center * winSize);
-			// 	window.draw(centerCircle);
-			// }
+			if(poly.size > 2) {
+				center.setPosition(poly.MassCenter() * winSize);
+				window.draw(center);
+			}
 			break;
 		case DONE:
 			vec2 r = RandVec2();
