@@ -1,4 +1,2 @@
-utils.o
-polygon.o
-main.o
-app
+/build
+/tmp

@@ -1,6 +1,5 @@
 #include "polygon.h"
 
-
 Poly::Poly() {
 	points = {}, size = 0;
 }
@@ -27,36 +26,17 @@ vec2 Poly::operator[](s32 i) const {
 	return points[mmod(i, points.size())];
 }
 
-void Poly::DrawPoly(sf::RenderWindow& rwin) const {
+void Poly::DrawPoly(sf::RenderWindow& rwin, Box2 box) const {
 	vec2 S = (vec2)rwin.getSize();
 	if(size < 1) return;
 	sf::Vertex *vlines = new sf::Vertex[size + 1];
 	for(u32 i = 0; i <= size; i++) {
-		vlines[i] = (*this)[i] * S;
+		vlines[i] = box * (*this)[i];
 	}
 
 	rwin.draw(vlines, size + 1, sf::LineStrip);
 	delete[] vlines;
 }
-/*void Poly::DrawPoly(sf::RenderWindow& rwin, const Extremes& extrs) const {
-	sf::Color red = {255,0,0}, blue = {0,0,255};
-	vec2 S = (vec2)rwin.getSize();
-	if(size < 2) return;
-
-	bool type = extrs.type == Extremes::MAXFIRST;
-	for(s32 i = 0, ec = extrs.ids.size(); i < ec; i++, type = !type) {
-		std::vector<sf::Vertex> line = {};
-		s32 j0 = extrs[i];
-		s32 j2 = extrs[i+1];
-		auto col = type ? red : blue;
-		for(s32 j = extrs[i]; j != j2 ; j = (j+1)%size) {
-			line.push_back({(*this)[j]*S, col});
-		}
-		line.push_back({(*this)[j2]*S, col});
-		rwin.draw(&(line[0]), mmod(j2-j0, size)+1, sf::LineStrip);
-	}
-}*/
-
 
 float Poly::Area() const {
 	float s = 0;
@@ -80,27 +60,21 @@ vec2 Poly::MassCenter() const {
 }
 
 s32 MonotonicZones::InspectZone(Zone z, const Poly& poly, vec2 p) {
-	float py = p.y;
-	float ay = poly[z.a].y, by = poly[z.b].y;
+	float py = p.y, ay = poly[z.a].y, by = poly[z.b].y, cy;
 	float mi = fmin(ay, by), ma = fmax(ay, by);
 
-	if(z.type == SegType::ANY) return 0;
+	if(py <= mi || py >= ma || z.type == SegType::ANY) return 0;
 	bool u_d = z.type == SegType::UP;
-	u32 c = (z.a+z.b)/2;
-	if(py <= mi || py >= ma) return 0;
-	float cy = poly[c].y;
 
-	while(z.a != c) {
-		if((p.y < cy)^u_d) {
-			z.a = c;
-		} else {
-			z.b = c;
-		}
-		c = (z.a+z.b)/2;
+	for(u32 c;;) {
+		c = (z.a + z.b) / 2;
 		cy = poly[c].y;
+		if(z.a == c) break;
+		((p.y < cy) ^ u_d ? z.a : z.b) = c;
 	}
+
 	vec2 A = poly[z.a], B = poly[z.b];
-	return (cross(p-A,B-A) < 0) - u_d;
+	return u_d - (cross(p-A,B-A) < 0);
 }
 
 MonotonicZones Poly::DivideToMonotonics() const {
@@ -117,7 +91,6 @@ MonotonicZones Poly::DivideToMonotonics() const {
 		if(typeNext == SegType::ANY) typeNext = typeTemp;
 		if(typeTemp != typeNext) {
 			parts.push_back({is, i + 1, typeTemp});
-			//printf("[%d %d] : %s\n", is, i + 1, typeTemp == SegType::UP ? "up" : typeTemp == SegType::DOWN ? "down" : "???");
 			typeTemp = typeNext, is = i + 1;
 		}
 	}
@@ -128,8 +101,112 @@ s32 Poly::IsInsideInt(const MonotonicZones& mz, vec2 p) const {
 	s32 s = 0;
 	for(auto z : mz.parts) {
 		s32 ds = MonotonicZones::InspectZone(z, *this, p);
-		//printf("[%d %d] -> %d\n", z.a, z.b, ds);
 		s += ds;
 	}
 	return s;
+}
+
+SegType Poly::GetSegType(s32 i) const {
+	float y0 = (*this)[i].y, y1 = (*this)[i + 1].y;
+	return y0 < y1 ? SegType::UP : y0 > y1 ? SegType::DOWN : SegType::ANY; 
+}
+
+void MonotonicZones::print() {
+	for(auto z : parts) {
+		printf("[%d,%d] ", z.a, z.b);
+	}
+	printf("\n");
+}
+IndexedCloud ToSorted(const PointCloud& cloud) {
+	u32 n = cloud.size();
+	IndexedCloud icloud = IndexedCloud(n);
+	for(u32 i = 0; i < n; i++) { icloud[i] = {cloud[i], i}; }
+	std::sort(icloud.begin(), icloud.end(), [](ipoint a, ipoint b) { return a.p.x < b.p.x || (a.p.x == b.p.x && a.p.y < b.p.y); });	
+	return icloud;
+}
+
+std::vector<u32> MinimalHull(const IndexedCloud& cloud) {
+	u32 n = cloud.size();
+	if(!n) return {};
+	std::vector<u32> upper = {0}, lower = {0};
+	for(u32 i = 1; i < n; i++) {
+		u32 nu = upper.size(), nl = lower.size();
+		vec2 p = cloud[i].p, ulast = cloud[upper[nu - 1]].p, llast = cloud[lower[nl - 1]].p;
+
+		{
+			s32 j = nu;
+			for(;--j > 0;) {
+				vec2 a = cloud[upper[j - 1]].p, b = cloud[upper[j]].p;
+				float cr = cross(b - a, p - b);
+				float d1 = dot(b - a, b - a);
+				if(cr < 0 || (cr == 0 && d1 <= 0)) break;
+			}
+			upper.resize(j + 2);
+			upper[j + 1] = i;
+		}
+		{
+			s32 j = nl;
+			for(;--j > 0;) {
+				vec2 a = cloud[lower[j - 1]].p, b = cloud[lower[j]].p;
+				float cr = cross(b - a, p - b);
+				float d1 = dot(b - a, b - a);
+				if(cr > 0 || (cr == 0 && d1 <= 0)) break;
+			}
+			lower.resize(j + 2);
+			lower[j + 1] = i;
+		}
+	}
+	for(s32 nl = lower.size(), i = nl - 2; i > 0; --i) {
+		upper.push_back(lower[i]);
+	}
+	return upper;
+}
+std::vector<u32> MinimalHull(const PointCloud& cloud) {
+	auto icloud = ToSorted(cloud);
+	auto ids = MinimalHull(icloud);
+	std::vector<u32> ans;
+	for(u32 i = 0; i < ids.size(); i++) {
+		ans.push_back(icloud[ids[i]].id);
+	}
+	return ans;
+}
+
+Poly MakePoly(const PointCloud& cloud, const std::vector<u32>& ids) {
+	std::vector<vec2> vecs;
+	for(u32 i : ids) {
+		vecs.push_back(cloud[i]);
+	}
+	return {vecs};
+}
+
+Poly SortedPoly(const PointCloud& cloud) {
+	auto icloud = ToSorted(cloud);
+	std::vector<vec2> v;
+	for(auto i : icloud) {
+		v.push_back(i.p);
+	}
+	return {v};
+}
+
+bool VerifyMinimalHull(const std::vector<u32>& ids, const PointCloud& cloud) {
+	for(u32 n = ids.size(), i = 0; i < n; i++) {
+		vec2 a = cloud[ids[i]], b = cloud[ids[(i+1)%n]], c = cloud[ids[(i+2)%n]];
+		float cr = cross(b - a, c - b);
+		float d = dot(b - a, c - b);
+		if(cr > 0 || (cr == 0 && d > 0)) {
+			printf("not convex : %u %u %u\n", i, (i+1)%n, (i+2)%n);
+			return false;
+		}
+	}
+	Poly p = MakePoly(cloud, ids);
+	auto mz = p.DivideToMonotonics();
+	for(u32 n = cloud.size(), i = 0; i < n; i++) {
+		auto f = std::find(ids.begin(), ids.end(), i); 
+		if(f != ids.end()) continue;
+		if(p.IsInsideInt(mz, cloud[i]) > 0) {
+			printf("point outside: %u\n", i);
+			return false;
+		}
+	}
+	return true;
 }

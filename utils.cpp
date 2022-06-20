@@ -22,7 +22,7 @@ vec3 operator/(float a, vec3 b) { return {a / b.x, a / b.y, a / b.z}; }
 vec2 operator*(vec2 a, vec2 b) { return {a.x * b.x, a.y * b.y}; }
 vec2 operator*(vec2 a, float b) { return {a.x * b, a.y * b}; }
 vec2 operator*(float a, vec2 b) { return {a * b.x, a * b.y}; }
-vec2 operator/(vec2 a, vec2 b) { return {a.x / b.x, a.y / b.x}; }
+vec2 operator/(vec2 a, vec2 b) { return {a.x / b.x, a.y / b.y}; }
 vec2 operator/(vec2 a, float b) { return {a.x / b, a.y / b}; }
 vec2 operator/(float a, vec2 b) { return {a / b.x, a / b.y}; }
 
@@ -37,8 +37,8 @@ vec3 utof(vec3u v) { return vec3(v.x, v.y, v.z); }
 vec3 cross(vec3 a, vec3 b) { return {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x}; }
 float cross(vec2 a, vec2 b) { return a.x * b.y - a.y * b.x; }
 
-template<typename T>
-float len2(T v) { return dot(v, v); }
+float len2(vec2 v) { return dot(v, v); }
+float len2(vec3 v) { return dot(v, v); }
 
 s32 mmod(s32 a, s32 n) {
 	return (a%n+n)%n;

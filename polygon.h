@@ -1,5 +1,6 @@
-#include "utils.h"
-
+#pragma once
+#include "box2.h"
+#include <algorithm>
 
 struct Line {
 	vec2 a, b;
@@ -25,18 +26,13 @@ class Poly {
 	vec2& operator[](s32 i);
 	vec2 operator[](s32 i) const;
 
-	void DrawPoly(sf::RenderWindow& rwin) const;
-	//void DrawPoly(sf::RenderWindow& rwin, const Extremes& extrs) const;
-
+	void DrawPoly(sf::RenderWindow& rwin, Box2 box) const;
 	float Area() const;
 	vec2 AreaXCenter() const;
 	vec2 MassCenter() const;
 	MonotonicZones DivideToMonotonics() const;
 	s32 IsInsideInt(const MonotonicZones& mz, vec2 p) const;
-	SegType GetSegType(s32 i) const {
-		float y0 = (*this)[i].y, y1 = (*this)[i + 1].y;
-		return y0 < y1 ? SegType::UP : y0 > y1 ? SegType::DOWN : SegType::ANY; 
-	}
+	SegType GetSegType(s32 i) const;
 };
 
 struct MonotonicZones {
@@ -46,10 +42,23 @@ struct MonotonicZones {
 	};
 	std::vector<Zone> parts;
 	static s32 InspectZone(Zone z, const Poly& poly, vec2 p);
-	void print() {
-		for(auto z : parts) {
-			printf("[%d,%d] ", z.a, z.b);
-		}
-		printf("\n");
-	}
+	void print();
 };
+
+typedef std::vector<vec2> PointCloud;
+struct ipoint {
+	vec2 p;
+	u32 id;
+};
+typedef std::vector<ipoint> IndexedCloud;
+
+IndexedCloud ToSorted(const PointCloud& cloud);
+std::vector<u32> MinimalHull(const IndexedCloud& cloud);
+std::vector<u32> MinimalHull(const PointCloud& cloud);
+Poly MakePoly(const PointCloud& cloud, const std::vector<u32>& ids);
+
+
+Poly SortedPoly(const PointCloud& cloud);
+
+bool VerifyMinimalHull(const std::vector<u32>& ids, const PointCloud& cloud);
+
