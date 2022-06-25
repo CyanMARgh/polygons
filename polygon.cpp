@@ -179,13 +179,14 @@ Poly ReindexedCloud::MakePoly() const {
 	return {vecs};
 }
 std::pair<bool, Poly> ReindexedCloud::VerifyMinimalHull() const {
+	bool test = true;
 	for(u32 n = size(), i = 0; i < n; i++) {
 		vec2 a = (*source)[(*this)[i]], b = (*source)[(*this)[(i+1)%n]], c = (*source)[(*this)[(i+2)%n]];
 		float cr = cross(b - a, c - b);
 		float d = dot(b - a, c - b);
-		if(cr > 0 || (cr == 0 && d > 0)) {
-			printf("not convex : %u %u %u\n", i, (i+1)%n, (i+2)%n);
-			return {false,{}};
+		if(cr > 0 || (cr == 0 && d < 0)) {
+			printf("not convex : %u %u %u, cr: %g, d: %g\n", i, (i+1)%n, (i+2)%n, cr, d);
+			//test = false;
 		}
 	}
 	Poly p = MakePoly();
@@ -193,24 +194,24 @@ std::pair<bool, Poly> ReindexedCloud::VerifyMinimalHull() const {
 	for(u32 n = source->size(), i = 0; i < n; i++) {
 		auto f = std::find(begin(), end(), i); 
 		if(f != end()) continue;
-		if(p.IsInsideInt(mz, (*source)[i]) <= 0) {
-			printf("point outside: %u\n", i);
-			return {false,{}};
+		if(vec2 v = source->at(i); p.IsInsideInt(mz, v) <= 0) {
+			printf("point outside: %u (%f, %f)\n", i, v.x, v.y);
+			//test = flase;
 		}
 	}
-	return {true, p};
+	return {test, p};
 }
 std::tuple<bool, PointCloud, Poly> ReindexedCloud::MinimalHullTest(u32 N) {
 	PointCloud cloud;
 	cloud.resize(N);
 	for(u32 i = 0; i < N; i++) {
-		//vec2 rv = RandVec2();
-		//float r = pow(log(1. - rv.x * .9f), 2.) * .08f, phi = rv.y * 2 * M_PI;
-		//cloud[i] = vec2(.5f + r * sin(phi), .5f + r * cos(phi));
-		vec2 rv = {(rand()%10)/10.f, (rand()%10)/10.f};
-		cloud[i] = rv * vec2(.9f, .9f) + vec2(.05f, .05f);
+		vec2 rv = RandVec2();
+		float r = pow(log(1. - rv.x * .9f), 2.) * .08f, phi = rv.y * 2 * M_PI;
+		cloud[i] = vec2(.5f + r * sin(phi), .5f + r * cos(phi));
+		// vec2 rv = {(rand()%20)/20.f, (rand()%20)/20.f};
+		// cloud[i] = rv * vec2(.8f, .8f) + vec2(.1f, .1f);
 	}
-	auto hull = cloud.MinimalHull();
+	auto hull = cloud.ToCircularSorted().HullByCircular();
 	auto [r, poly] = hull.VerifyMinimalHull();
 	return {r, cloud, poly};
 }
@@ -221,21 +222,20 @@ ReindexedCloud PointCloud::ToCircularSorted() const {
  	for(u32 i = 0; i < n; i++) rc[i] = i;
  	if(n < 3) return rc;
 
-	float ymin = at(rc[0]).y;
-	u32 imin = 0;	
+	vec2 O = at(rc[0]);
+	u32 im = 0;
 	for (u32 i = 1; i < n; i++) {
-		float y = at(rc[i]).y;
-		if(y < ymin) {
-			ymin = y;
-			imin = i;
+		vec2 v = at(rc[i]);
+		if(v.y == O.y ? v.x > O.x : v.y < O.y) {
+			im = i, O = v;
 		}
 	}
-	std::swap(rc[0], rc[imin]);
-	std::sort(rc.begin() + 1, rc.end(), [this, imin](u32 a, u32 b) {
-		vec2 O = at(imin), A = at(a) - O, B = at(b) - O;
+	std::swap(rc[0], rc[im]);
+	std::sort(rc.begin() + 1, rc.end(), [this, O](u32 a, u32 b) {
+		vec2 A = at(a) - O, B = at(b) - O;
 		float phiA = atan2(A.x, A.y), phiB = atan2(B.x, B.y);
 		float rA = len2(A), rB = len2(B);
-		return rA == 0 ? rB > 0 :(rB != 0) && ((phiA != phiB) ? phiA < phiB : ((rA < rB) ^ (phiA > 0)));
+		return rA == 0 ? rB > 0 :(rB != 0) && ((phiA != phiB) ? phiA < phiB : rA < rB);
 	});
 
 	return rc;
@@ -257,7 +257,7 @@ ReindexedCloud ReindexedCloud::HullByCircular() const {
 			k = prev(j);
 			if(k < 0) break;
 		 	J = source->at(ans[j]), K = source->at(ans[k]);
-		 	if(CheckAngle(K, J, I, 0, 1, 1, 1, 1)) break;
+		 	if(CheckAngle(K, J, I, 0, 1, 0, 0, 1)) break;
 		}
 		ans.resize(j + 2);
 		ans[j + 1] = at(i);

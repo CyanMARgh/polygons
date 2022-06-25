@@ -28,13 +28,10 @@ void demo::ConvexHull() {
 			} 
 		}
 		window.clear();
-		//Poly poly = cloud.ToSorted().MakePoly();
 		if(cloud.size() > 2) {
 			Poly poly = cloud.ToCircularSorted().HullByCircular().MakePoly();
 			poly.DrawPoly(window, wintr);
 		}
-		// auto hull = MinimalHull(cloud);
-		// auto poly = MakePoly(cloud, hull);		
 		
 		for(auto p : cloud) {
 			point.setPosition(wintr * p);
@@ -53,7 +50,9 @@ void demo::ConvexHullTests() {
 
 	sf::RenderWindow window(sf::VideoMode(winSize, winSize), "polygons");
 
-	while (window.isOpen()) {
+	u32 total = 0, failed = 0;
+
+	while (window.isOpen() || total == 10000) {
 		for (sf::Event e; window.pollEvent(e);) {
 			switch(e.type) {
 			case sf::Event::Closed:
@@ -61,7 +60,8 @@ void demo::ConvexHullTests() {
 				break;
 			} 
 		}
-		auto [res, cloud, poly] = ReindexedCloud::MinimalHullTest(20);
+		auto [res, cloud, poly] = ReindexedCloud::MinimalHullTest(50);
+		++total, failed += 1 - res; 
 		window.clear(res ? sf::Color(0,0,0) : sf::Color(255,0,0));
 		poly.DrawPoly(window, wintr);
 		for(auto p : cloud) {
@@ -69,6 +69,7 @@ void demo::ConvexHullTests() {
 			window.draw(point);
 		}
 		window.display();
-		std::this_thread::sleep_for(std::chrono::seconds(2));
+		std::this_thread::sleep_for(std::chrono::milliseconds(res ? 0 : 3000));
 	}
+	printf("%u / %u\n", failed, total);
 }
