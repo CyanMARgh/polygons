@@ -1,5 +1,8 @@
 #include "polygon.h"
+#include "box2.h"
+#include <algorithm>
 
+//base
 Poly::Poly() {
 	points = {}, size = 0;
 }
@@ -25,7 +28,6 @@ vec2& Poly::operator[](s32 i) {
 vec2 Poly::operator[](s32 i) const {
 	return points[mmod(i, points.size())];
 }
-
 void Poly::DrawPoly(sf::RenderWindow& rwin, Box2 box) const {
 	vec2 S = (vec2)rwin.getSize();
 	if(size < 1) return;
@@ -38,6 +40,7 @@ void Poly::DrawPoly(sf::RenderWindow& rwin, Box2 box) const {
 	delete[] vlines;
 }
 
+// mass center & area
 float Poly::Area() const {
 	float s = 0;
 	for(u32 i = 0; i < size; i++) {
@@ -54,11 +57,11 @@ vec2 Poly::AreaXCenter() const {
 	}
 	return s / 6.f;
 }
-
 vec2 Poly::MassCenter() const {
 	return AreaXCenter() / Area();
 }
 
+// "is inside?"
 s32 MonotonicZones::InspectZone(Zone z, const Poly& poly, vec2 p) {
 	float py = p.y, ay = poly[z.a].y, by = poly[z.b].y, cy;
 	float mi = fmin(ay, by), ma = fmax(ay, by);
@@ -76,7 +79,6 @@ s32 MonotonicZones::InspectZone(Zone z, const Poly& poly, vec2 p) {
 	vec2 A = poly[z.a], B = poly[z.b];
 	return u_d - (cross(p-A,B-A) < 0);
 }
-
 MonotonicZones Poly::DivideToMonotonics() const {
 	if(!size) return {};
 
@@ -96,7 +98,6 @@ MonotonicZones Poly::DivideToMonotonics() const {
 	}
 	return {parts};
 }
-
 s32 Poly::IsInsideInt(const MonotonicZones& mz, vec2 p) const {
 	s32 s = 0;
 	for(auto z : mz.parts) {
@@ -105,108 +106,164 @@ s32 Poly::IsInsideInt(const MonotonicZones& mz, vec2 p) const {
 	}
 	return s;
 }
-
 SegType Poly::GetSegType(s32 i) const {
 	float y0 = (*this)[i].y, y1 = (*this)[i + 1].y;
 	return y0 < y1 ? SegType::UP : y0 > y1 ? SegType::DOWN : SegType::ANY; 
 }
-
 void MonotonicZones::print() {
 	for(auto z : parts) {
 		printf("[%d,%d] ", z.a, z.b);
 	}
 	printf("\n");
 }
-IndexedCloud ToSorted(const PointCloud& cloud) {
-	u32 n = cloud.size();
-	IndexedCloud icloud = IndexedCloud(n);
-	for(u32 i = 0; i < n; i++) { icloud[i] = {cloud[i], i}; }
-	std::sort(icloud.begin(), icloud.end(), [](ipoint a, ipoint b) { return a.p.x < b.p.x || (a.p.x == b.p.x && a.p.y < b.p.y); });	
-	return icloud;
-}
 
-std::vector<u32> MinimalHull(const IndexedCloud& cloud) {
-	u32 n = cloud.size();
+//convex hull
+ReindexedCloud::ReindexedCloud(std::vector<u32> ids, const PointCloud* source) : std::vector<u32>(ids), source(source) { }
+
+ReindexedCloud PointCloud::ToSorted() const {
+	u32 n = size();
+	auto t = this;
+	ReindexedCloud rc(std::vector<u32>(n), t);
+	for(u32 i = 0; i < n; i++) rc[i] = i;
+	std::sort(rc.begin(), rc.end(), [t](u32 a, u32 b) { return t->at(a).x < t->at(b).x || (t->at(a).x == t->at(b).x && t->at(a).y < t->at(b).y); });	
+	return rc;
+}
+// fix to nlogn
+ReindexedCloud ReindexedCloud::MinimalHull() const {
+	u32 n = size();
 	if(!n) return {};
 	std::vector<u32> upper = {0}, lower = {0};
 	for(u32 i = 1; i < n; i++) {
 		u32 nu = upper.size(), nl = lower.size();
-		vec2 p = cloud[i].p, ulast = cloud[upper[nu - 1]].p, llast = cloud[lower[nl - 1]].p;
+		vec2 p = source->at(at(i)), ulast = source->at(at(upper[nu - 1])), llast = source->at(at(lower[nl - 1]));
 
-		{
-			s32 j = nu;
-			for(;--j > 0;) {
-				vec2 a = cloud[upper[j - 1]].p, b = cloud[upper[j]].p;
-				float cr = cross(b - a, p - b);
-				float d1 = dot(b - a, b - a);
-				if(cr < 0 || (cr == 0 && d1 <= 0)) break;
-			}
-			upper.resize(j + 2);
-			upper[j + 1] = i;
+		s32 j = nu;
+		for(; --j > 0;) {
+			vec2 a = source->at(at(upper[j - 1])), b = source->at(at(upper[j]));
+			float cr = cross(b - a, p - b);
+			float d1 = dot(b - a, p - b);
+			float d2 = dot(b - a, b - a);
+			if(d2 < 1.e-7) printf("!");
+			if(cr < 0 || (cr == 0 && d1 <= 0)) break;
 		}
-		{
-			s32 j = nl;
-			for(;--j > 0;) {
-				vec2 a = cloud[lower[j - 1]].p, b = cloud[lower[j]].p;
-				float cr = cross(b - a, p - b);
-				float d1 = dot(b - a, b - a);
-				if(cr > 0 || (cr == 0 && d1 <= 0)) break;
-			}
-			lower.resize(j + 2);
-			lower[j + 1] = i;
+		if(source->at(upper[0]) == source->at(i))printf("!");
+		upper.resize(j + 2);
+		upper[j + 1] = i;
+
+		j = nl;
+		for(; --j > 0;) {
+			vec2 a = source->at(at(lower[j - 1])), b = source->at(at(lower[j]));
+			float cr = cross(b - a, p - b);
+			float d1 = dot(b - a, p - b);
+			float d2 = dot(b - a, b - a);
+			if(d2 == 0) printf("!");
+			if(cr > 0 || (cr == 0 && d1 <= 0)) break;
 		}
+		lower.resize(j + 2);
+		lower[j + 1] = i;
 	}
 	for(s32 nl = lower.size(), i = nl - 2; i > 0; --i) {
 		upper.push_back(lower[i]);
 	}
-	return upper;
+	for(u32& i : upper) i = at(i);
+	return {upper, source};
 }
-std::vector<u32> MinimalHull(const PointCloud& cloud) {
-	auto icloud = ToSorted(cloud);
-	auto ids = MinimalHull(icloud);
-	std::vector<u32> ans;
-	for(u32 i = 0; i < ids.size(); i++) {
-		ans.push_back(icloud[ids[i]].id);
-	}
-	return ans;
+ReindexedCloud PointCloud::MinimalHull() const {
+	return ToSorted().MinimalHull();
 }
-
-Poly MakePoly(const PointCloud& cloud, const std::vector<u32>& ids) {
+Poly ReindexedCloud::MakePoly() const {
 	std::vector<vec2> vecs;
-	for(u32 i : ids) {
-		vecs.push_back(cloud[i]);
+	for(u32 i : *this) {
+		vecs.push_back(source->at(i));
 	}
 	return {vecs};
 }
-
-Poly SortedPoly(const PointCloud& cloud) {
-	auto icloud = ToSorted(cloud);
-	std::vector<vec2> v;
-	for(auto i : icloud) {
-		v.push_back(i.p);
-	}
-	return {v};
-}
-
-bool VerifyMinimalHull(const std::vector<u32>& ids, const PointCloud& cloud) {
-	for(u32 n = ids.size(), i = 0; i < n; i++) {
-		vec2 a = cloud[ids[i]], b = cloud[ids[(i+1)%n]], c = cloud[ids[(i+2)%n]];
+std::pair<bool, Poly> ReindexedCloud::VerifyMinimalHull() const {
+	for(u32 n = size(), i = 0; i < n; i++) {
+		vec2 a = (*source)[(*this)[i]], b = (*source)[(*this)[(i+1)%n]], c = (*source)[(*this)[(i+2)%n]];
 		float cr = cross(b - a, c - b);
 		float d = dot(b - a, c - b);
 		if(cr > 0 || (cr == 0 && d > 0)) {
 			printf("not convex : %u %u %u\n", i, (i+1)%n, (i+2)%n);
-			return false;
+			return {false,{}};
 		}
 	}
-	Poly p = MakePoly(cloud, ids);
+	Poly p = MakePoly();
 	auto mz = p.DivideToMonotonics();
-	for(u32 n = cloud.size(), i = 0; i < n; i++) {
-		auto f = std::find(ids.begin(), ids.end(), i); 
-		if(f != ids.end()) continue;
-		if(p.IsInsideInt(mz, cloud[i]) > 0) {
+	for(u32 n = source->size(), i = 0; i < n; i++) {
+		auto f = std::find(begin(), end(), i); 
+		if(f != end()) continue;
+		if(p.IsInsideInt(mz, (*source)[i]) <= 0) {
 			printf("point outside: %u\n", i);
-			return false;
+			return {false,{}};
 		}
 	}
-	return true;
+	return {true, p};
 }
+std::tuple<bool, PointCloud, Poly> ReindexedCloud::MinimalHullTest(u32 N) {
+	PointCloud cloud;
+	cloud.resize(N);
+	for(u32 i = 0; i < N; i++) {
+		//vec2 rv = RandVec2();
+		//float r = pow(log(1. - rv.x * .9f), 2.) * .08f, phi = rv.y * 2 * M_PI;
+		//cloud[i] = vec2(.5f + r * sin(phi), .5f + r * cos(phi));
+		vec2 rv = {(rand()%10)/10.f, (rand()%10)/10.f};
+		cloud[i] = rv * vec2(.9f, .9f) + vec2(.05f, .05f);
+	}
+	auto hull = cloud.MinimalHull();
+	auto [r, poly] = hull.VerifyMinimalHull();
+	return {r, cloud, poly};
+}
+
+ReindexedCloud PointCloud::ToCircularSorted() const {
+ 	u32 n = size();
+ 	ReindexedCloud rc(std::vector<u32>(n), this);
+ 	for(u32 i = 0; i < n; i++) rc[i] = i;
+ 	if(n < 3) return rc;
+
+	float ymin = at(rc[0]).y;
+	u32 imin = 0;	
+	for (u32 i = 1; i < n; i++) {
+		float y = at(rc[i]).y;
+		if(y < ymin) {
+			ymin = y;
+			imin = i;
+		}
+	}
+	std::swap(rc[0], rc[imin]);
+	std::sort(rc.begin() + 1, rc.end(), [this, imin](u32 a, u32 b) {
+		vec2 O = at(imin), A = at(a) - O, B = at(b) - O;
+		float phiA = atan2(A.x, A.y), phiB = atan2(B.x, B.y);
+		float rA = len2(A), rB = len2(B);
+		return rA == 0 ? rB > 0 :(rB != 0) && ((phiA != phiB) ? phiA < phiB : ((rA < rB) ^ (phiA > 0)));
+	});
+
+	return rc;
+}
+ReindexedCloud ReindexedCloud::HullByCircular() const {
+	u32 n = size();
+	if(n < 3) return *this;
+	std::vector<u32> ans = {at(0)};
+	auto prev = [this, &ans](u32 i) {
+		vec2 v = source->at(ans.at(i));
+		s32 j = i;
+		while(--j, j && source->at(ans.at(j)) == v);
+		return j;
+	};
+	for(s32 i = 1; i < n; ++i) {
+		vec2 I = source->at(at(i)), J, K;
+		u32 j = ans.size() - 1, k;
+		for(;j > 0; j = k) {
+			k = prev(j);
+			if(k < 0) break;
+		 	J = source->at(ans[j]), K = source->at(ans[k]);
+		 	if(CheckAngle(K, J, I, 0, 1, 1, 1, 1)) break;
+		}
+		ans.resize(j + 2);
+		ans[j + 1] = at(i);
+	}
+	return {ans, source};
+}
+
+
+

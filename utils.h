@@ -45,3 +45,5 @@ vec3 cross(vec3 a, vec3 b);
 float cross(vec2 a, vec2 b);
 
 s32 mmod(s32 a, s32 n);
+
+bool CheckAngle(vec2 A, vec2 B, vec2 C, bool l, bool r, bool f, bool b, bool o);

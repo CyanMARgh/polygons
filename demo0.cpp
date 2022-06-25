@@ -1,4 +1,6 @@
 #include "demos.h"
+#include "polygon.h"
+#include "box2.h"
 
 void demo::MassCenterAndSeparation() {
 	enum State { BUILD, DONE } state = BUILD;

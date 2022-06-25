@@ -1,12 +1,14 @@
 #pragma once
+#include <vector>
+#include "utils.h"
 #include "box2.h"
-#include <algorithm>
 
 struct Line {
 	vec2 a, b;
 };
 
 struct MonotonicZones;
+struct ReindexedCloud;
 
 enum class SegType {
 	UP, DOWN, ANY
@@ -45,20 +47,21 @@ struct MonotonicZones {
 	void print();
 };
 
-typedef std::vector<vec2> PointCloud;
-struct ipoint {
-	vec2 p;
-	u32 id;
+struct PointCloud : std::vector<vec2> {
+	ReindexedCloud ToSorted() const;
+	ReindexedCloud ToCircularSorted() const;
+	ReindexedCloud MinimalHull() const;
 };
-typedef std::vector<ipoint> IndexedCloud;
 
-IndexedCloud ToSorted(const PointCloud& cloud);
-std::vector<u32> MinimalHull(const IndexedCloud& cloud);
-std::vector<u32> MinimalHull(const PointCloud& cloud);
-Poly MakePoly(const PointCloud& cloud, const std::vector<u32>& ids);
+struct ReindexedCloud : std::vector<u32> {
+	const PointCloud* source;
 
+	ReindexedCloud(std::vector<u32> ids = {}, const PointCloud* source = nullptr);
 
-Poly SortedPoly(const PointCloud& cloud);
+	ReindexedCloud HullByCircular() const;
+	ReindexedCloud MinimalHull() const;
+	Poly MakePoly() const;
 
-bool VerifyMinimalHull(const std::vector<u32>& ids, const PointCloud& cloud);
-
+	std::pair<bool, Poly> VerifyMinimalHull() const;
+	static std::tuple<bool, PointCloud, Poly> MinimalHullTest(u32 N);
+};

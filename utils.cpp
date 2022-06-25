@@ -44,4 +44,8 @@ s32 mmod(s32 a, s32 n) {
 	return (a%n+n)%n;
 }
 
-
+bool CheckAngle(vec2 A, vec2 B, vec2 C, bool l, bool r, bool f, bool b, bool o) {
+	float cr = cross(B - A, C - B);
+	float d = dot(B - A, C - A);
+	return cr > 0 ? l : cr < 0 ? r : d > 0 ? f : d < 0 ? b : o;
+}
