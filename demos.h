@@ -1,8 +1,9 @@
 #pragma once
 
 namespace demo {
-	void MassCenterAndSeparation();
-	void ConvexHull();
-	void ConvexHullTests();
-	void Trees();
+	void mass_center_and_separation();
+	void convex_hull();
+	void convex_hull_tests();
+	void trees();
+	void minimum_circle();
 }

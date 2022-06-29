@@ -1,67 +1,91 @@
 #pragma once
 #include <vector>
 #include "utils.h"
-#include "box2.h"
+#include "transforms.h"
 
-struct Line {
+struct line {
 	vec2 a, b;
 };
 
-struct MonotonicZones;
-struct ReindexedCloud;
+struct monotonic_zones;
+struct reindexed_cloud;
 
-enum class SegType {
+enum class seg_type {
 	UP, DOWN, ANY
 };
 
-class Poly {
+class poly {
 	std::vector<vec2> points;
 	public:
 	u32 size = 0;
 
-	Poly() ;
-	Poly(std::vector<vec2> _points);
-	Poly& operator=(std::vector<vec2> _points);
-	Poly(const Poly& poly);
+	poly() ;
+	poly(std::vector<vec2> other);
+	poly& operator=(std::vector<vec2> other);
+	poly(const poly& P);
 
 	void add(vec2 p) ;
 	vec2& operator[](s32 i);
 	vec2 operator[](s32 i) const;
 
-	void DrawPoly(sf::RenderWindow& rwin, Box2 box) const;
-	float Area() const;
-	vec2 AreaXCenter() const;
-	vec2 MassCenter() const;
-	MonotonicZones DivideToMonotonics() const;
-	s32 IsInsideInt(const MonotonicZones& mz, vec2 p) const;
-	SegType GetSegType(s32 i) const;
+	void draw(sf::RenderWindow& rwin, box2 box) const;
+	float area() const;
+	vec2 area_X_center() const;
+	vec2 mass_center() const;
+	monotonic_zones divide_to_monotonics() const;
+	s32 is_inside_val(const monotonic_zones& mz, vec2 p) const;
+	seg_type get_seg_type(s32 i) const;
 };
 
-struct MonotonicZones {
-	struct Zone {
+struct monotonic_zones {
+	struct zone {
 		s32 a, b;
-		SegType type;
+		seg_type type;
 	};
-	std::vector<Zone> parts;
-	static s32 InspectZone(Zone z, const Poly& poly, vec2 p);
+	std::vector<zone> parts;
+	static s32 inspect_zone(zone z, const poly& P, vec2 p);
 	void print();
 };
 
-struct PointCloud : std::vector<vec2> {
-	ReindexedCloud ToSorted() const;
-	ReindexedCloud ToCircularSorted() const;
-	ReindexedCloud MinimalHull() const;
+struct point_cloud : std::vector<vec2> {
+	reindexed_cloud to_sorted() const;
+	reindexed_cloud to_circular_sorted() const;
+	reindexed_cloud minimal_hull() const;
 };
 
-struct ReindexedCloud : std::vector<u32> {
-	const PointCloud* source;
+struct reindexed_cloud : std::vector<u32> {
+	const point_cloud* source;
 
-	ReindexedCloud(std::vector<u32> ids = {}, const PointCloud* source = nullptr);
+	reindexed_cloud(std::vector<u32> ids = {}, const point_cloud* source = nullptr);
 
-	ReindexedCloud HullByCircular() const;
-	ReindexedCloud MinimalHull() const;
-	Poly MakePoly() const;
+	reindexed_cloud hull_by_circular() const;
+	reindexed_cloud minimal_hull() const;
+	poly make_poly() const;
 
-	std::pair<bool, Poly> VerifyMinimalHull() const;
-	static std::tuple<bool, PointCloud, Poly> MinimalHullTest(u32 N);
+	std::pair<bool, poly> verify_minimal_hull() const;
+	static std::tuple<bool, point_cloud, poly> minimal_hull_test(u32 N);
+
+	vec2 satat(u32 i) const;
+	vec2 sat(u32 i) const;
 };
+
+struct cloud_range {
+	point_cloud* source;
+	u32 a, b;
+
+	s32 size() const; 
+	vec2 at(u32 i) const;
+};
+struct circle {
+	vec2 c = {};
+	float r = 0.f;
+
+	bool inside(vec2 p) const;
+	void draw(sf::RenderWindow& rwin, sf::CircleShape& spr, box2 box) const;
+};
+
+circle trivial(const reindexed_cloud& rng);
+circle welzl(reindexed_cloud P, reindexed_cloud R);
+circle welzl(point_cloud cloud);
+
+

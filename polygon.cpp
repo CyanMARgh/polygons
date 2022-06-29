@@ -1,54 +1,53 @@
 #include "polygon.h"
-#include "box2.h"
 #include <algorithm>
+#include <numeric>
 
 //base
-Poly::Poly() {
+poly::poly() {
 	points = {}, size = 0;
 }
-Poly::Poly(std::vector<vec2> _points) : points(std::move(_points)) { 
+poly::poly(std::vector<vec2> other) : points(std::move(other)) { 
 	size = points.size();
 }
-Poly& Poly::operator=(std::vector<vec2> _points) {
-	points = std::move(_points);
-	size = _points.size();
+poly& poly::operator=(std::vector<vec2> other) {
+	points = std::move(other);
+	size = other.size();
 	return *this;
 }
-Poly::Poly(const Poly& poly) {
-	points = poly.points;
-	size = poly.size;
+poly::poly(const poly& P) {
+	points = P.points;
+	size = P.size;
 }
-void Poly::add(vec2 p) {
+void poly::add(vec2 p) {
 	points.push_back(p);
 	++size;
 }
-vec2& Poly::operator[](s32 i) {
+vec2& poly::operator[](s32 i) {
 	return points[mmod(i, points.size())];
 }
-vec2 Poly::operator[](s32 i) const {
+vec2 poly::operator[](s32 i) const {
 	return points[mmod(i, points.size())];
 }
-void Poly::DrawPoly(sf::RenderWindow& rwin, Box2 box) const {
+void poly::draw(sf::RenderWindow& rwin, box2 box) const {
 	vec2 S = (vec2)rwin.getSize();
 	if(size < 1) return;
 	sf::Vertex *vlines = new sf::Vertex[size + 1];
 	for(u32 i = 0; i <= size; i++) {
 		vlines[i] = box * (*this)[i];
 	}
-
 	rwin.draw(vlines, size + 1, sf::LineStrip);
 	delete[] vlines;
 }
 
 // mass center & area
-float Poly::Area() const {
+float poly::area() const {
 	float s = 0;
 	for(u32 i = 0; i < size; i++) {
 		s += cross((*this)[i+1], (*this)[i]);
 	}
 	return s / 2.f;
 }
-vec2 Poly::AreaXCenter() const {
+vec2 poly::area_X_center() const {
 	vec2 s = {0.f, 0.f};
 	vec2 a, b;
 	for(u32 i = 0; i < size; i++) {
@@ -57,60 +56,60 @@ vec2 Poly::AreaXCenter() const {
 	}
 	return s / 6.f;
 }
-vec2 Poly::MassCenter() const {
-	return AreaXCenter() / Area();
+vec2 poly::mass_center() const {
+	return area_X_center() / area();
 }
 
 // "is inside?"
-s32 MonotonicZones::InspectZone(Zone z, const Poly& poly, vec2 p) {
-	float py = p.y, ay = poly[z.a].y, by = poly[z.b].y, cy;
+s32 monotonic_zones::inspect_zone(zone z, const poly& P, vec2 p) {
+	float py = p.y, ay = P[z.a].y, by = P[z.b].y, cy;
 	float mi = fmin(ay, by), ma = fmax(ay, by);
 
-	if(py <= mi || py >= ma || z.type == SegType::ANY) return 0;
-	bool u_d = z.type == SegType::UP;
+	if(py <= mi || py >= ma || z.type == seg_type::ANY) return 0;
+	bool u_d = z.type == seg_type::UP;
 
 	for(u32 c;;) {
 		c = (z.a + z.b) / 2;
-		cy = poly[c].y;
+		cy = P[c].y;
 		if(z.a == c) break;
 		((p.y < cy) ^ u_d ? z.a : z.b) = c;
 	}
 
-	vec2 A = poly[z.a], B = poly[z.b];
+	vec2 A = P[z.a], B = P[z.b];
 	return u_d - (cross(p-A,B-A) < 0);
 }
-MonotonicZones Poly::DivideToMonotonics() const {
+monotonic_zones poly::divide_to_monotonics() const {
 	if(!size) return {};
 
-	std::vector<MonotonicZones::Zone> parts;
-	SegType type0 = GetSegType(0), typeTemp = type0;
+	std::vector<monotonic_zones::zone> parts;
+	seg_type type0 = get_seg_type(0), type_temp = type0;
 	s32 i0 = 0;
-	while((typeTemp == SegType::ANY || typeTemp == type0) && i0 < size) typeTemp = GetSegType(++i0);
+	while((type_temp == seg_type::ANY || type_temp == type0) && i0 < size) type_temp = get_seg_type(++i0);
 	if(i0 == size) return {{{0, (s32)size, type0}}};
 
 	for(s32 i = i0, is = i0; i < i0 + size; i++) {
-		SegType typeNext = GetSegType(i + 1);
-		if(typeNext == SegType::ANY) typeNext = typeTemp;
-		if(typeTemp != typeNext) {
-			parts.push_back({is, i + 1, typeTemp});
-			typeTemp = typeNext, is = i + 1;
+		seg_type type_next = get_seg_type(i + 1);
+		if(type_next == seg_type::ANY) type_next = type_temp;
+		if(type_temp != type_next) {
+			parts.push_back({is, i + 1, type_temp});
+			type_temp = type_next, is = i + 1;
 		}
 	}
 	return {parts};
 }
-s32 Poly::IsInsideInt(const MonotonicZones& mz, vec2 p) const {
+s32 poly::is_inside_val(const monotonic_zones& mz, vec2 p) const {
 	s32 s = 0;
 	for(auto z : mz.parts) {
-		s32 ds = MonotonicZones::InspectZone(z, *this, p);
+		s32 ds = monotonic_zones::inspect_zone(z, *this, p);
 		s += ds;
 	}
 	return s;
 }
-SegType Poly::GetSegType(s32 i) const {
+seg_type poly::get_seg_type(s32 i) const {
 	float y0 = (*this)[i].y, y1 = (*this)[i + 1].y;
-	return y0 < y1 ? SegType::UP : y0 > y1 ? SegType::DOWN : SegType::ANY; 
+	return y0 < y1 ? seg_type::UP : y0 > y1 ? seg_type::DOWN : seg_type::ANY; 
 }
-void MonotonicZones::print() {
+void monotonic_zones::print() {
 	for(auto z : parts) {
 		printf("[%d,%d] ", z.a, z.b);
 	}
@@ -118,18 +117,20 @@ void MonotonicZones::print() {
 }
 
 //convex hull
-ReindexedCloud::ReindexedCloud(std::vector<u32> ids, const PointCloud* source) : std::vector<u32>(ids), source(source) { }
+reindexed_cloud::reindexed_cloud(std::vector<u32> ids, const point_cloud* source) : std::vector<u32>(ids), source(source) { }
+vec2 reindexed_cloud::satat(u32 i) const { return sat(at(i)); }
+vec2 reindexed_cloud::sat(u32 i) const { return source->at(i); }
 
-ReindexedCloud PointCloud::ToSorted() const {
+reindexed_cloud point_cloud::to_sorted() const {
 	u32 n = size();
 	auto t = this;
-	ReindexedCloud rc(std::vector<u32>(n), t);
+	reindexed_cloud rc(std::vector<u32>(n), t);
 	for(u32 i = 0; i < n; i++) rc[i] = i;
 	std::sort(rc.begin(), rc.end(), [t](u32 a, u32 b) { return t->at(a).x < t->at(b).x || (t->at(a).x == t->at(b).x && t->at(a).y < t->at(b).y); });	
 	return rc;
 }
 // fix to nlogn
-ReindexedCloud ReindexedCloud::MinimalHull() const {
+reindexed_cloud reindexed_cloud::minimal_hull() const {
 	u32 n = size();
 	if(!n) return {};
 	std::vector<u32> upper = {0}, lower = {0};
@@ -168,17 +169,17 @@ ReindexedCloud ReindexedCloud::MinimalHull() const {
 	for(u32& i : upper) i = at(i);
 	return {upper, source};
 }
-ReindexedCloud PointCloud::MinimalHull() const {
-	return ToSorted().MinimalHull();
+reindexed_cloud point_cloud::minimal_hull() const {
+	return to_sorted().minimal_hull();
 }
-Poly ReindexedCloud::MakePoly() const {
+poly reindexed_cloud::make_poly() const {
 	std::vector<vec2> vecs;
 	for(u32 i : *this) {
 		vecs.push_back(source->at(i));
 	}
 	return {vecs};
 }
-std::pair<bool, Poly> ReindexedCloud::VerifyMinimalHull() const {
+std::pair<bool, poly> reindexed_cloud::verify_minimal_hull() const {
 	bool test = true;
 	for(u32 n = size(), i = 0; i < n; i++) {
 		vec2 a = (*source)[(*this)[i]], b = (*source)[(*this)[(i+1)%n]], c = (*source)[(*this)[(i+2)%n]];
@@ -189,36 +190,36 @@ std::pair<bool, Poly> ReindexedCloud::VerifyMinimalHull() const {
 			//test = false;
 		}
 	}
-	Poly p = MakePoly();
-	auto mz = p.DivideToMonotonics();
+	poly p = make_poly();
+	auto mz = p.divide_to_monotonics();
 	for(u32 n = source->size(), i = 0; i < n; i++) {
 		auto f = std::find(begin(), end(), i); 
 		if(f != end()) continue;
-		if(vec2 v = source->at(i); p.IsInsideInt(mz, v) <= 0) {
+		if(vec2 v = source->at(i); p.is_inside_val(mz, v) <= 0) {
 			printf("point outside: %u (%f, %f)\n", i, v.x, v.y);
 			//test = flase;
 		}
 	}
 	return {test, p};
 }
-std::tuple<bool, PointCloud, Poly> ReindexedCloud::MinimalHullTest(u32 N) {
-	PointCloud cloud;
+std::tuple<bool, point_cloud, poly> reindexed_cloud::minimal_hull_test(u32 N) {
+	point_cloud cloud;
 	cloud.resize(N);
 	for(u32 i = 0; i < N; i++) {
-		vec2 rv = RandVec2();
+		vec2 rv = rand_vec2();
 		float r = pow(log(1. - rv.x * .9f), 2.) * .08f, phi = rv.y * 2 * M_PI;
 		cloud[i] = vec2(.5f + r * sin(phi), .5f + r * cos(phi));
 		// vec2 rv = {(rand()%20)/20.f, (rand()%20)/20.f};
 		// cloud[i] = rv * vec2(.8f, .8f) + vec2(.1f, .1f);
 	}
-	auto hull = cloud.ToCircularSorted().HullByCircular();
-	auto [r, poly] = hull.VerifyMinimalHull();
+	auto hull = cloud.to_circular_sorted().hull_by_circular();
+	auto [r, poly] = hull.verify_minimal_hull();
 	return {r, cloud, poly};
 }
 
-ReindexedCloud PointCloud::ToCircularSorted() const {
+reindexed_cloud point_cloud::to_circular_sorted() const {
  	u32 n = size();
- 	ReindexedCloud rc(std::vector<u32>(n), this);
+ 	reindexed_cloud rc(std::vector<u32>(n), this);
  	for(u32 i = 0; i < n; i++) rc[i] = i;
  	if(n < 3) return rc;
 
@@ -240,7 +241,7 @@ ReindexedCloud PointCloud::ToCircularSorted() const {
 
 	return rc;
 }
-ReindexedCloud ReindexedCloud::HullByCircular() const {
+reindexed_cloud reindexed_cloud::hull_by_circular() const {
 	u32 n = size();
 	if(n < 3) return *this;
 	std::vector<u32> ans = {at(0)};
@@ -257,7 +258,7 @@ ReindexedCloud ReindexedCloud::HullByCircular() const {
 			k = prev(j);
 			if(k < 0) break;
 		 	J = source->at(ans[j]), K = source->at(ans[k]);
-		 	if(CheckAngle(K, J, I, 0, 1, 0, 0, 1)) break;
+		 	if(check_angle(K, J, I, 0, 1, 0, 0, 1)) break;
 		}
 		ans.resize(j + 2);
 		ans[j + 1] = at(i);
@@ -265,5 +266,57 @@ ReindexedCloud ReindexedCloud::HullByCircular() const {
 	return {ans, source};
 }
 
+//minimum circle
+s32 cloud_range::size() const {
+	return b - a;
+}
+vec2 cloud_range::at(u32 i) const {
+	return source->at(a + i);
+}
+bool circle::inside(vec2 p) const {
+	p -= c;
+	return len2(p) <= r * r + 1e-7;
+}
+void circle::draw(sf::RenderWindow& rwin, sf::CircleShape& spr, box2 box) const {
+	spr.setPosition(box * c);
+	float R = r * box.s.x;
+	spr.setRadius(R);
+	spr.setOrigin(R, R);
+	rwin.draw(spr);
+}
+
+circle trivial(const reindexed_cloud& rng) {
+	u32 s = rng.size();
+	if(s <= 0) {
+		return {};
+	} else if(vec2 a = rng.satat(0); s == 1) {
+		return {a};
+	} else if(vec2 b = rng.satat(1); s == 2) {
+		return {(a + b) / 2, len(a-b)/2};
+	} else {
+		vec2 c = rng.satat(2);
+		if(dot(b-a,c-b)>0) return {(a+c)/2, len(a-c)/2};
+		if(dot(c-b,a-c)>0) return {(b+a)/2, len(b-a)/2};
+		if(dot(a-c,b-a)>0) return {(c+b)/2, len(c-b)/2};
+		vec2 o = circumcenter(a, b, c);
+		return {o, len(o-a)};
+	}
+}
+circle welzl(reindexed_cloud P, reindexed_cloud R) {
+	u32 ps = P.size();
+	if(ps == 0 || R.size() == 3) return trivial(R);
+	s32 p = P.at(ps-1); P.pop_back();
+	circle D = welzl(P, R);
+	if(D.inside(P.sat(p))) return D;
+	R.push_back(p);
+	return welzl(P, R);
+}
+circle welzl(point_cloud cloud) {
+	std::random_shuffle(cloud.begin(), cloud.end());
+	std::vector<u32> ids(cloud.size());
+	std::iota(ids.begin(), ids.end(), 0), std::random_shuffle(ids.begin(), ids.end());
+	reindexed_cloud P = {ids, &cloud}, R = {{}, &cloud};
+	return welzl(P, R);
+}
 
 

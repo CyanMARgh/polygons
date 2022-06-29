@@ -3,136 +3,136 @@
 #include <iostream>
 #include <cmath>
 
-u32 Tree::Node::Heigth(const Tree::Node* node) {
-	return node ? node->heigth : 0;
+u32 tree::node::get_heigth(const tree::node* n) {
+	return n ? n->heigth : 0;
 }
-void Tree::Node::ConnectChilds(Tree::Node* node) {
-	if(!node) return;
-	if(node->left) { 
-		node->left->parent = node;
+void tree::node::connect_childs(tree::node* n) {
+	if(!n) return;
+	if(n->left) { 
+		n->left->parent = n;
 	}
-	if(node->right) {
-		node->right->parent = node;
+	if(n->right) {
+		n->right->parent = n;
 	}
 }
-void Tree::Node::UpdateHeigth(Tree::Node* node) {
-	if(!node) return;
-	u32 hl = Heigth(node->left) + 1, hr = Heigth(node->right) + 1;
-	node->heigth = hl > hr ? hl : hr;
+void tree::node::update_heigth(tree::node* n) {
+	if(!n) return;
+	u32 hl = get_heigth(n->left) + 1, hr = get_heigth(n->right) + 1;
+	n->heigth = hl > hr ? hl : hr;
 }
-Tree::Node::Node(Key key, Val val) {
-	this->key = key, this->val = val;
+tree::node::node(key k, val v) {
+	this->k = k, this->v = v;
 	heigth = 1, left = nullptr, right = nullptr;
 }
-Tree::Node* Tree::Node::Copy(Tree::Node* node) {
-	if(!node) return nullptr;
-	Node* copy = new Node(node->key, node->val);
-	copy->heigth = node->heigth;
-	copy->left = Copy(node->left), copy->right = Copy(node->right);
-	ConnectChilds(copy);
-	return copy;
+tree::node* tree::node::copy(tree::node* n) {
+	if(!n) return nullptr;
+	node* nc = new node(n->k, n->v);
+	nc->heigth = n->heigth;
+	nc->left = copy(n->left), nc->right = copy(n->right);
+	connect_childs(nc);
+	return nc;
 }
-Tree::Node* Tree::Node::Balance(Tree::Node* node) {
-	s32 hl = Heigth(node->left), hr = Heigth(node->right), d = hr - hl;
+tree::node* tree::node::balance(tree::node* n) {
+	s32 hl = get_heigth(n->left), hr = get_heigth(n->right), d = hr - hl;
 	if(d > 1) {
-		Tree::Node *R = node->right, *A = node->left, *B = R->left, *C = R->right;
-		R->left = node;
-		node->right = B;
-		ConnectChilds(node), ConnectChilds(R);
-		UpdateHeigth(node), UpdateHeigth(R);
+		tree::node *R = n->right, *A = n->left, *B = R->left, *C = R->right;
+		R->left = n;
+		n->right = B;
+		connect_childs(n), connect_childs(R);
+		update_heigth(n), update_heigth(R);
 		return R;
 	} else if (d < -1) {
-		Tree::Node *L = node->left, *A = node->right, *B = L->right, *C = L->left;
-		L->right = node;
-		node->left = B;
-		ConnectChilds(node), ConnectChilds(L);
-		UpdateHeigth(node), UpdateHeigth(L);
+		tree::node *L = n->left, *A = n->right, *B = L->right, *C = L->left;
+		L->right = n;
+		n->left = B;
+		connect_childs(n), connect_childs(L);
+		update_heigth(n), update_heigth(L);
 		return L;
 	} else {
-		return node;
+		return n;
 	}
 }
 
-Tree::Node* Tree::Node::Add(Tree::Node* node, Key key, Val val) {
-	if(!node) return new Node(key, val);
-	Key nkey = node->key;
-	if(nkey > key) {
-		node->left = Add(node->left, key, val);
+tree::node* tree::node::add(tree::node* n, key k, val v) {
+	if(!n) return new node(k, v);
+	key nk = n->k;
+	if(nk > k) {
+		n->left = add(n->left, k, v);
 	} else {
-		node->right = Add(node->right, key, val);
+		n->right = add(n->right, k, v);
 	}
-	ConnectChilds(node);
-	UpdateHeigth(node);
-	return Balance(node);
+	connect_childs(n);
+	update_heigth(n);
+	return balance(n);
 }
-Tree::Node* Tree::Node::Remove(Tree::Node* node, Key key) {
-	if(!node) return nullptr;
-	Key nkey = node->key;
-	if(nkey > key) {
-		node->left = Remove(node->left, key);
-	} else if (nkey < key) {
-		node->right = Remove(node->right, key);
+tree::node* tree::node::remove(tree::node* n, key k) {
+	if(!n) return nullptr;
+	key nk = n->k;
+	if(nk > k) {
+		n->left = remove(n->left, k);
+	} else if (nk < k) {
+		n->right = remove(n->right, k);
 	} else {
-		delete node;
+		delete n;
 		return nullptr;
 	}
-	ConnectChilds(node);
-	UpdateHeigth(node);
-	return Balance(node);	
+	connect_childs(n);
+	update_heigth(n);
+	return balance(n);	
 }
-Val* Tree::Node::At(Tree::Node* node, Key key) {
-	if(node) {
-		Key nkey = node->key;
-		if(nkey > key) {
-			return At(node->left, key);
-		} else if(nkey < key) {
-			return At(node->right, key);
+val* tree::node::at(tree::node* n, key k) {
+	if(n) {
+		key nk = n->k;
+		if(nk > k) {
+			return at(n->left, k);
+		} else if(nk < k) {
+			return at(n->right, k);
 		} else {
-			return &(node->val);
+			return &(n->v);
 		}
 	} else {
 		return nullptr;
 	}
 }
-void Tree::Node::Print(const Tree::Node* node, u32 depth) {
-	if(!node) return;
-	Print(node->right, depth + 1);
+void tree::node::print(const tree::node* n, u32 depth) {
+	if(!n) return;
+	print(n->right, depth + 1);
 	for(u32 i = 0; i < depth; i++)printf("  ");
-	std::cout << "[" << node->key << ": " << node->val << "]\n";
-	Print(node->left, depth + 1);
+	std::cout << "[" << n->k << ": " << n->v << "]\n";
+	print(n->left, depth + 1);
 }
-void Tree::Node::Clear(Node* node) {
-	if(!node) return;
-	Clear(node->left);
-	Clear(node->right);
-	delete node;
+void tree::node::clear(node* n) {
+	if(!n) return;
+	clear(n->left);
+	clear(n->right);
+	delete n;
 }
 
-Tree::Tree() {
+tree::tree() {
 	root = nullptr;
 }
-Tree::Tree(const Tree& other) {
-	root = Node::Copy(other.root);
+tree::tree(const tree& other) {
+	root = node::copy(other.root);
 }
-Tree& Tree::operator=(const Tree& other) {
+tree& tree::operator=(const tree& other) {
 	if(&other != this) {
-		Node::Clear(root);
-		root = Node::Copy(other.root);
+		node::clear(root);
+		root = node::copy(other.root);
 	}
 	return *this;
 }
-Tree::~Tree() {
-	Node::Clear(root);
+tree::~tree() {
+	node::clear(root);
 }
-void Tree::Add(Key key, Val val) {
-	root = Node::Add(root, key, val);
+void tree::add(key k, val v) {
+	root = node::add(root, k, v);
 }
-Val* Tree::At(Key key) {
-	return Node::At(root, key);
+val* tree::at(key k) {
+	return node::at(root, k);
 }
-void Tree::Remove(Key key) {
-	root = Node::Remove(root, key);
+void tree::remove(key k) {
+	root = node::remove(root, k);
 }
-void Tree::Print() const {
-	Node::Print(root, 0);
+void tree::print() const {
+	node::print(root, 0);
 }

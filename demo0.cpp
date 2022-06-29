@@ -1,23 +1,23 @@
 #include "demos.h"
 #include "polygon.h"
-#include "box2.h"
+#include "transforms.h"
 
-void demo::MassCenterAndSeparation() {
+void demo::mass_center_and_separation() {
 	enum State { BUILD, DONE } state = BUILD;
 	struct PointData { vec2 pos; sf::Color color; };
 	std::vector<PointData> points = {};
 
 	float pointRad = 3, winSize = 800, centerRad = 10;
 
-	Box2 wintr = {winSize,-winSize,0,winSize}, inv = wintr.inv();
+	box2 wintr = {winSize,-winSize,0,winSize}, inv = wintr.inv();
 
 	sf::CircleShape point(pointRad), center(centerRad);
 	point.setOrigin(pointRad, pointRad);
 	center.setOrigin(centerRad, centerRad);
 	center.setFillColor(sf::Color(255, 255, 255));
 
-	Poly poly;
-	MonotonicZones mz;
+	poly P;
+	monotonic_zones mz;
 
 	sf::RenderWindow window(sf::VideoMode(winSize, winSize), "polygons");
 
@@ -28,29 +28,29 @@ void demo::MassCenterAndSeparation() {
 				window.close();
 				break;
 			case sf::Event::KeyPressed:
-				if(e.text.unicode == 10 && poly.size > 2) {
+				if(e.text.unicode == 10 && P.size > 2) {
 					state = DONE;
-					mz = poly.DivideToMonotonics();
+					mz = P.divide_to_monotonics();
 				}
 				break;	
 			case sf::Event::MouseButtonPressed: 
 				vec2 mpos = inv * (vec2)sf::Mouse::getPosition(window);
-				if(state == BUILD) poly.add(mpos);
+				if(state == BUILD) P.add(mpos);
 				break;
 			} 
 		}
 		window.clear();
-		poly.DrawPoly(window, wintr);
+		P.draw(window, wintr);
 		switch(state) {
 		case BUILD:
-			if(poly.size > 2) {
-				center.setPosition(wintr * poly.MassCenter());
+			if(P.size > 2) {
+				center.setPosition(wintr * P.mass_center());
 				window.draw(center);
 			}
 			break;
 		case DONE:
-			vec2 r = RandVec2();
-			points.push_back({wintr * r, poly.IsInsideInt(mz, r) > 0 ? sf::Color(234,182,118) : sf::Color(171,219,227)});
+			vec2 r = rand_vec2();
+			points.push_back({wintr * r, P.is_inside_val(mz, r) > 0 ? sf::Color(234,182,118) : sf::Color(171,219,227)});
 			for(const auto& p: points) {
 				point.setFillColor(p.color);
 				point.setPosition(p.pos);

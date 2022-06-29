@@ -2,41 +2,41 @@
 
 #include "utils.h"
 
-typedef s32 Key;
-typedef s32 Val;
+typedef s32 key;
+typedef s32 val;
 
-class Tree {
+class tree {
 	public:
-	struct Node {
+	struct node {
 		u32 heigth;
-		Node *parent, *left, *right;
-		Key key;
-		Val val;
+		node *parent, *left, *right;
+		key k;
+		val v;
 
-		Node(Key key, Val value);
+		node(key k, val v);
 
-		static Node* Copy(Node* node);
-		static void UpdateHeigth(Node* node);
-		static void ConnectChilds(Node* node);
-		static Node* Add(Node* node, Key key, Val val);
-		static Node* Remove(Node* node, Key key);
-		static Val* At(Node* node, Key key);
-		static Node* Balance(Node* node);
-		static void Print(const Node* node, u32 depth);
-		static void Clear(Node* node);
-		static u32 Heigth(const Node* node);
+		static node* copy(node* n);
+		static void update_heigth(node* n);
+		static void connect_childs(node* n);
+		static node* add(node* n, key k, val v);
+		static node* remove(node* n, key k);
+		static val* at(node* n, key k);
+		static node* balance(node* n);
+		static void print(const node* n, u32 depth);
+		static void clear(node* n);
+		static u32 get_heigth(const node* n);
 	};
 	private:
-	Node* root;
+	node* root;
 	public:
-	Tree();
-	Tree(const Tree& other);
+	tree();
+	tree(const tree& other);
 	//Tree(Tree&& other);
-	Tree& operator=(const Tree& other);
+	tree& operator=(const tree& other);
 	//Tree& operator=(Tree&& other);
-	~Tree();
-	void Add(Key key, Val val);
-	Val* At(Key key);
-	void Remove(Key key);
-	void Print() const;
+	~tree();
+	void add(key k, val v);
+	val* at(key k);
+	void remove(key k);
+	void print() const;
 };

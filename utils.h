@@ -12,9 +12,9 @@ typedef sf::Vector2f vec2;
 typedef sf::Vector3<u32> vec3u;
 typedef sf::Vector3f vec3;
 
-float Randf();
-vec3 RandUnit();
-vec2 RandVec2();
+float randf();
+vec3 rand_unit();
+vec2 rand_vec2();
 
 //vec3
 vec3 operator*(vec3 A, vec3 B);
@@ -40,10 +40,14 @@ vec3 utof(vec3u v);
 float len2(vec2 v);
 float len2(vec3 v);
 
+float len(vec2 v);
+float len(vec3 v);
 
 vec3 cross(vec3 a, vec3 b);
 float cross(vec2 a, vec2 b);
 
 s32 mmod(s32 a, s32 n);
 
-bool CheckAngle(vec2 A, vec2 B, vec2 C, bool l, bool r, bool f, bool b, bool o);
+bool check_angle(vec2 A, vec2 B, vec2 C, bool l, bool r, bool f, bool b, bool o);
+vec2 circumcenter(vec2 A, vec2 B, vec2 C);
+

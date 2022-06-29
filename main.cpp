@@ -3,12 +3,10 @@
 #include <iostream>
 
 int main() {
-	// int x, y;
-	// std::cin>> x>>y;
-	// std::cout << atan2(x, y);
-	//demo::MassCenterAndSeparation();
-	//demo::ConvexHull();
-	demo::ConvexHullTests();
-	//demo::Trees();
+	//demo::mass_center_and_separation();
+	demo::convex_hull();
+	demo::convex_hull_tests();
+	//demo::trees();
+	demo::minimum_circle();
 	return 0;
 }

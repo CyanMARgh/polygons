@@ -1,17 +1,17 @@
 #include "demos.h"
 #include "polygon.h"
-#include "box2.h"
+#include "transforms.h"
 #include <thread>
 
-void demo::ConvexHull() {
-	PointCloud cloud = {};
+void demo::convex_hull() {
+	point_cloud cloud = {};
 
-	float pointRad = 3, winSize = 800, centerRad = 10;
-	Box2 wintr = {winSize, -winSize, 0, winSize}, inv = wintr.inv();;
-	sf::CircleShape point(pointRad);
-	point.setOrigin(pointRad, pointRad);
+	float point_rad = 3, win_size = 800, center_rad = 10;
+	box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();;
+	sf::CircleShape point(point_rad);
+	point.setOrigin(point_rad, point_rad);
 
-	sf::RenderWindow window(sf::VideoMode(winSize, winSize), "polygons");
+	sf::RenderWindow window(sf::VideoMode(win_size, win_size), "polygons");
 
 	sf::Clock clock;
 
@@ -29,8 +29,8 @@ void demo::ConvexHull() {
 		}
 		window.clear();
 		if(cloud.size() > 2) {
-			Poly poly = cloud.ToCircularSorted().HullByCircular().MakePoly();
-			poly.DrawPoly(window, wintr);
+			poly P = cloud.to_circular_sorted().hull_by_circular().make_poly();
+			P.draw(window, wintr);
 		}
 		
 		for(auto p : cloud) {
@@ -41,14 +41,14 @@ void demo::ConvexHull() {
 	}
 }
 
-void demo::ConvexHullTests() {
-	float pointRad = 3, winSize = 800, centerRad = 10;
-	Box2 wintr = {winSize, -winSize, 0, winSize}, wininv = wintr.inv();
+void demo::convex_hull_tests() {
+	float point_rad = 3, win_size = 800, center_rad = 10;
+	box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();;
 
-	sf::CircleShape point(pointRad);
-	point.setOrigin(pointRad, pointRad);
+	sf::CircleShape point(point_rad);
+	point.setOrigin(point_rad, point_rad);
 
-	sf::RenderWindow window(sf::VideoMode(winSize, winSize), "polygons");
+	sf::RenderWindow window(sf::VideoMode(win_size, win_size), "polygons");
 
 	u32 total = 0, failed = 0;
 
@@ -60,10 +60,10 @@ void demo::ConvexHullTests() {
 				break;
 			} 
 		}
-		auto [res, cloud, poly] = ReindexedCloud::MinimalHullTest(50);
+		auto [res, cloud, P] = reindexed_cloud::minimal_hull_test(50);
 		++total, failed += 1 - res; 
 		window.clear(res ? sf::Color(0,0,0) : sf::Color(255,0,0));
-		poly.DrawPoly(window, wintr);
+		P.draw(window, wintr);
 		for(auto p : cloud) {
 			point.setPosition(wintr * p);
 			window.draw(point);
