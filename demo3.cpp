@@ -35,8 +35,12 @@ void demo::minimum_circle() {
 			point.setPosition(wintr * p);
 			window.draw(point);
 		}
-		//circle D = trivial({&cloud, 0, cloud.size()});
-		circle D = welzl(cloud);
+		circle D;
+		// if(cloud.size() == 3) {
+		// 	D = trivial({{0, 1, 2}, &cloud});
+		// 	D.draw(window, outer_circle, wintr);
+		// }
+		D = welzl(cloud);
 		D.draw(window, outer_circle, wintr);
 		window.display();
 	}

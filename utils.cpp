@@ -58,3 +58,11 @@ vec2 circumcenter(vec2 A, vec2 B, vec2 C) {
 	vec2 v1 = B - A, v2 = C - A;
 	return mat2x2::from_rows(v1, v2).inv() * vec2(k1, k2);
 }
+
+float lerp(float a, float b, float t) { return a + (b - a) * t; }
+vec2 lerp(vec2 a, vec2 b, float t) { return a + (b - a) * t; }
+vec3 lerp(vec3 a, vec3 b, float t) { return a + (b - a) * t; }
+
+vec2 lrot(vec2 a) { return {-a.y, a.x}; }
+vec2 rrot(vec2 a) { return {a.y, -a.x}; }
+float rlerp(float a, float b, float c) { return a == b ? .5f : (c - a) / (b - a); }

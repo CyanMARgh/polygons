@@ -61,8 +61,25 @@ vec2 poly::mass_center() const {
 }
 
 // "is inside?"
-s32 monotonic_zones::inspect_zone(zone z, const poly& P, vec2 p) {
-	float py = p.y, ay = P[z.a].y, by = P[z.b].y, cy;
+// s32 monotonic_zones::inspect_zone(zone z, const poly& P, vec2 p) {
+// 	float py = p.y, ay = P[z.a].y, by = P[z.b].y, cy;
+// 	float mi = fmin(ay, by), ma = fmax(ay, by);
+
+// 	if(py <= mi || py >= ma || z.type == seg_type::ANY) return 0;
+// 	bool u_d = z.type == seg_type::UP;
+
+// 	for(u32 c;;) {
+// 		c = (z.a + z.b) / 2;
+// 		cy = P[c].y;
+// 		if(z.a == c) break;
+// 		((p.y < cy) ^ u_d ? z.a : z.b) = c;
+// 	}
+
+// 	vec2 A = P[z.a], B = P[z.b];
+// 	return u_d - (cross(p-A,B-A) < 0);
+// }
+s32 monotonic_zones::inspect_zone(zone z, const poly& P, vec2 p, vec2 n) {
+	float py = dot(p, n), ay = dot(P[z.a], n), by = dot(P[z.b], n), cy;
 	float mi = fmin(ay, by), ma = fmax(ay, by);
 
 	if(py <= mi || py >= ma || z.type == seg_type::ANY) return 0;
@@ -70,26 +87,33 @@ s32 monotonic_zones::inspect_zone(zone z, const poly& P, vec2 p) {
 
 	for(u32 c;;) {
 		c = (z.a + z.b) / 2;
-		cy = P[c].y;
+		cy = dot(P[c], n);
 		if(z.a == c) break;
-		((p.y < cy) ^ u_d ? z.a : z.b) = c;
+		((dot(p, n) < cy) ^ u_d ? z.a : z.b) = c;
 	}
 
 	vec2 A = P[z.a], B = P[z.b];
-	return u_d - (cross(p-A,B-A) < 0);
+	float t1 = rlerp(dot(A, n), dot(B, n), dot(p, n));
+	float t2 = lerp(cross(A, n), cross(B, n), t1) - cross(p, n);
+
+	intersection I = {t1, t2, z.a};	
+	return u_d - ((t2 < 0) ^ u_d);
 }
-monotonic_zones poly::divide_to_monotonics() const {
+monotonic_zones poly::divide_to_monotonics(vec2 n) const {
 	if(!size) return {};
 
 	std::vector<monotonic_zones::zone> parts;
-	seg_type type0 = get_seg_type(0), type_temp = type0;
 	s32 i0 = 0;
-	while((type_temp == seg_type::ANY || type_temp == type0) && i0 < size) type_temp = get_seg_type(++i0);
+
+	seg_type type0, type_temp;
+	while((type0 = get_seg_type(i0, n)) == seg_type::ANY && i0 < size) i0++;
 	if(i0 == size) return {{{0, (s32)size, type0}}};
+	i0++;
+	while(type_temp = get_seg_type(i0, n), (type_temp == seg_type::ANY || type_temp == type0) && i0 <= size) i0++;
 
 	for(s32 i = i0, is = i0; i < i0 + size; i++) {
-		seg_type type_next = get_seg_type(i + 1);
-		if(type_next == seg_type::ANY) type_next = type_temp;
+		seg_type type_next = get_seg_type(i + 1, n);
+		if(type_next == seg_type::ANY) continue;
 		if(type_temp != type_next) {
 			parts.push_back({is, i + 1, type_temp});
 			type_temp = type_next, is = i + 1;
@@ -105,9 +129,9 @@ s32 poly::is_inside_val(const monotonic_zones& mz, vec2 p) const {
 	}
 	return s;
 }
-seg_type poly::get_seg_type(s32 i) const {
-	float y0 = (*this)[i].y, y1 = (*this)[i + 1].y;
-	return y0 < y1 ? seg_type::UP : y0 > y1 ? seg_type::DOWN : seg_type::ANY; 
+seg_type poly::get_seg_type(s32 i, vec2 n) const {
+	float q = dot(n, (*this)[i+1]-(*this)[i]);
+	return q > 0 ? seg_type::UP : q < 0 ? seg_type::DOWN : seg_type::ANY; 
 }
 void monotonic_zones::print() {
 	for(auto z : parts) {
@@ -274,17 +298,23 @@ vec2 cloud_range::at(u32 i) const {
 	return source->at(a + i);
 }
 bool circle::inside(vec2 p) const {
-	p -= c;
-	return len2(p) <= r * r + 1e-7;
+	return len2(p - c) <= r2;
 }
 void circle::draw(sf::RenderWindow& rwin, sf::CircleShape& spr, box2 box) const {
 	spr.setPosition(box * c);
-	float R = r * box.s.x;
+	float R = sqrt(r2) * box.s.x;
 	spr.setRadius(R);
 	spr.setOrigin(R, R);
 	rwin.draw(spr);
 }
-
+vec2 trivial3(vec2 a, vec2 b, vec2 c) {
+	// if(a == b) return (b + c) / 2;
+	// if(b == c || a == c) return (a + b) / 2;
+	if(dot(a, b) + 4 * len2(c) <= dot(a + b, c)) return (a + b) / 2;
+	if(dot(a, c) + 4 * len2(b) <= dot(a + c, b)) return (a + c) / 2;
+	if(dot(b, c) + 4 * len2(a) <= dot(b + c, a)) return (b + c) / 2;
+	return circumcenter(a, b, c);
+}
 circle trivial(const reindexed_cloud& rng) {
 	u32 s = rng.size();
 	if(s <= 0) {
@@ -292,14 +322,11 @@ circle trivial(const reindexed_cloud& rng) {
 	} else if(vec2 a = rng.satat(0); s == 1) {
 		return {a};
 	} else if(vec2 b = rng.satat(1); s == 2) {
-		return {(a + b) / 2, len(a-b)/2};
+		return {(a + b) / 2, len2((a - b) / 2)};
 	} else {
 		vec2 c = rng.satat(2);
-		if(dot(b-a,c-b)>0) return {(a+c)/2, len(a-c)/2};
-		if(dot(c-b,a-c)>0) return {(b+a)/2, len(b-a)/2};
-		if(dot(a-c,b-a)>0) return {(c+b)/2, len(c-b)/2};
-		vec2 o = circumcenter(a, b, c);
-		return {o, len(o-a)};
+		vec2 o = trivial3(a, b, c);
+		return {o, len2(o - a)};
 	}
 }
 circle welzl(reindexed_cloud P, reindexed_cloud R) {
@@ -307,16 +334,19 @@ circle welzl(reindexed_cloud P, reindexed_cloud R) {
 	if(ps == 0 || R.size() == 3) return trivial(R);
 	s32 p = P.at(ps-1); P.pop_back();
 	circle D = welzl(P, R);
-	if(D.inside(P.sat(p))) return D;
-	R.push_back(p);
-	return welzl(P, R);
+	if(!D.inside(P.sat(p))) {
+		R.push_back(p);
+		D = welzl(P, R);
+	}
+	return D;
 }
 circle welzl(point_cloud cloud) {
+	std::sort(cloud.begin(), cloud.end(), [](vec2 a, vec2 b){return a.x == b.x ? a.x < b.x : a.y < b.y; });
+	cloud.erase(std::unique(cloud.begin(), cloud.end()), cloud.end());
+
 	std::random_shuffle(cloud.begin(), cloud.end());
-	std::vector<u32> ids(cloud.size());
+	std::vector<u32> ids(cloud.size());	
 	std::iota(ids.begin(), ids.end(), 0), std::random_shuffle(ids.begin(), ids.end());
 	reindexed_cloud P = {ids, &cloud}, R = {{}, &cloud};
 	return welzl(P, R);
 }
-
-

@@ -51,3 +51,10 @@ s32 mmod(s32 a, s32 n);
 bool check_angle(vec2 A, vec2 B, vec2 C, bool l, bool r, bool f, bool b, bool o);
 vec2 circumcenter(vec2 A, vec2 B, vec2 C);
 
+float lerp(float a, float b, float t);
+vec2 lerp(vec2 a, vec2 b, float t);
+vec3 lerp(vec3 a, vec3 b, float t);
+
+vec2 lrot(vec2 a);
+vec2 rrot(vec2 a);
+float rlerp(float a, float b, float c);

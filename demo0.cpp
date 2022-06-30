@@ -3,7 +3,7 @@
 #include "transforms.h"
 
 void demo::mass_center_and_separation() {
-	enum State { BUILD, DONE } state = BUILD;
+	enum State { BUILD, FREE, DONE } state = FREE;
 	struct PointData { vec2 pos; sf::Color color; };
 	std::vector<PointData> points = {};
 
@@ -34,29 +34,41 @@ void demo::mass_center_and_separation() {
 				}
 				break;	
 			case sf::Event::MouseButtonPressed: 
-				vec2 mpos = inv * (vec2)sf::Mouse::getPosition(window);
-				if(state == BUILD) P.add(mpos);
+				if(state != DONE) {
+					state = BUILD; 
+					// vec2 mpos = inv * (vec2)sf::Mouse::getPosition(window);
+					// P.add(mpos); 
+				}
+				break;
+			case sf::Event::MouseButtonReleased:
+				if(state != DONE) state = FREE;
 				break;
 			} 
 		}
 		window.clear();
 		P.draw(window, wintr);
 		switch(state) {
-		case BUILD:
-			if(P.size > 2) {
-				center.setPosition(wintr * P.mass_center());
-				window.draw(center);
+			case BUILD: {
+				vec2 mpos = inv * (vec2)sf::Mouse::getPosition(window);
+				P.add(mpos); 
 			}
-			break;
-		case DONE:
-			vec2 r = rand_vec2();
-			points.push_back({wintr * r, P.is_inside_val(mz, r) > 0 ? sf::Color(234,182,118) : sf::Color(171,219,227)});
-			for(const auto& p: points) {
-				point.setFillColor(p.color);
-				point.setPosition(p.pos);
-				window.draw(point);
+			case FREE: {
+				if(P.size > 2) {
+					center.setPosition(wintr * P.mass_center());
+					window.draw(center);
+				}
+				break; 
 			}
-			break;
+			case DONE: {
+				vec2 r = rand_vec2();
+				points.push_back({wintr * r, P.is_inside_val(mz, r) > 0 ? sf::Color(234,182,118) : sf::Color(171,219,227)});
+				for(const auto& p: points) {
+					point.setFillColor(p.color);
+					point.setPosition(p.pos);
+					window.draw(point);
+				}
+				break; 
+			}
 		}
 		window.display();
 	}
