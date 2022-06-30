@@ -2,9 +2,9 @@ FLAGS=-lsfml-window -lsfml-system -lsfml-graphics -lpthread -std=c++17 -lm -O3
 
 all: build/app
 
-build/app: tmp/main.o tmp/demo0.o tmp/utils.o tmp/polygon.o tmp/demo1.o tmp/demo2.o tmp/transforms.o tmp/tree.o tmp/demo3.o
+build/app: tmp/main.o tmp/demo0.o tmp/utils.o tmp/polygon.o tmp/demo1.o tmp/demo2.o tmp/transforms.o tmp/tree.o tmp/demo3.o tmp/demo4.o
 	g++ tmp/main.o\
-		tmp/demo0.o tmp/demo1.o tmp/demo2.o tmp/demo3.o\
+		tmp/demo0.o tmp/demo1.o tmp/demo2.o tmp/demo3.o tmp/demo4.o\
 		tmp/polygon.o tmp/tree.o tmp/transforms.o tmp/utils.o -o build/app $(FLAGS)
 
 tmp/main.o: main.cpp demos.h
@@ -19,7 +19,8 @@ tmp/demo2.o: demo2.cpp demos.h tree.h
 	g++ -c demo2.cpp -o tmp/demo2.o $(FLAGS)	
 tmp/demo3.o: demo3.cpp demos.h polygon.h
 	g++ -c demo3.cpp -o tmp/demo3.o $(FLAGS)	
-
+tmp/demo4.o: demo4.cpp demos.h polygon.h
+	g++ -c demo4.cpp -o tmp/demo4.o $(FLAGS)	
 
 
 tmp/polygon.o: polygon.cpp polygon.h utils.h transforms.h

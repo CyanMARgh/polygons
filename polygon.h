@@ -9,6 +9,8 @@ struct line {
 
 struct monotonic_zones;
 struct reindexed_cloud;
+struct intersection;
+typedef std::vector<intersection> intersection_list;
 
 enum class seg_type {
 	UP, DOWN, ANY
@@ -32,17 +34,22 @@ class poly {
 	float area() const;
 	vec2 area_X_center() const;
 	vec2 mass_center() const;
-	//monotonic_zones divide_to_monotonics() const;
+
 	monotonic_zones divide_to_monotonics(vec2 n = {0, 1}) const;
-	s32 is_inside_val(const monotonic_zones& mz, vec2 p) const;
+	intersection_list find_intersections(line l) const;
+
+	s32 is_inside_val(const monotonic_zones& mz, vec2 p, vec2 n = {0, 1}) const;
 	seg_type get_seg_type(s32 i, vec2 n) const;
 };
+// struct generic_poly : std::vector<poly> {
+
+// };
 
 struct intersection {
 	float t1, t2;
 	s32 id;
+	//bool i_o;
 };
-typedef std::vector<intersection> intersection_list;
 
 struct monotonic_zones {
 	struct zone {
@@ -50,8 +57,7 @@ struct monotonic_zones {
 		seg_type type;
 	};
 	std::vector<zone> parts;
-	//static s32 inspect_zone(zone z, const poly& P, vec2 p);
-	static s32 inspect_zone(zone z, const poly& P, vec2 p, vec2 n = {0, 1}); //!!!!!!!!
+	static intersection inspect_zone(zone z, const poly& P, vec2 p, vec2 n = {0, 1});
 
 	void print();
 };
@@ -60,6 +66,8 @@ struct point_cloud : std::vector<vec2> {
 	reindexed_cloud to_sorted() const;
 	reindexed_cloud to_circular_sorted() const;
 	reindexed_cloud minimal_hull() const;
+
+	void draw(sf::RenderWindow& rwin, sf::CircleShape& spr, box2 box) const;
 };
 struct reindexed_cloud : std::vector<u32> {
 	const point_cloud* source;
@@ -95,3 +103,9 @@ vec2 trivial3(vec2 a, vec2 b, vec2 c);
 circle trivial(const reindexed_cloud& rng);
 circle welzl(reindexed_cloud P, reindexed_cloud R);
 circle welzl(point_cloud cloud);
+
+point_cloud to_cloud(const poly& P, const intersection_list& L);
+
+void draw(vec2 p, sf::RenderWindow& rw, sf::CircleShape& spr, box2 b);
+
+//namespace primitives { }

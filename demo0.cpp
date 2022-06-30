@@ -21,6 +21,9 @@ void demo::mass_center_and_separation() {
 
 	sf::RenderWindow window(sf::VideoMode(winSize, winSize), "polygons");
 
+
+	vec2 n = {.8, .6};
+
 	while (window.isOpen()) {
 		for (sf::Event e; window.pollEvent(e);) {
 			switch(e.type) {
@@ -30,7 +33,7 @@ void demo::mass_center_and_separation() {
 			case sf::Event::KeyPressed:
 				if(e.text.unicode == 10 && P.size > 2) {
 					state = DONE;
-					mz = P.divide_to_monotonics();
+					mz = P.divide_to_monotonics(n);
 				}
 				break;	
 			case sf::Event::MouseButtonPressed: 
@@ -61,7 +64,7 @@ void demo::mass_center_and_separation() {
 			}
 			case DONE: {
 				vec2 r = rand_vec2();
-				points.push_back({wintr * r, P.is_inside_val(mz, r) > 0 ? sf::Color(234,182,118) : sf::Color(171,219,227)});
+				points.push_back({wintr * r, P.is_inside_val(mz, r, n) > 0 ? sf::Color(234,182,118) : sf::Color(171,219,227)});
 				for(const auto& p: points) {
 					point.setFillColor(p.color);
 					point.setPosition(p.pos);
