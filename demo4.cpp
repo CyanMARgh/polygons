@@ -19,6 +19,7 @@ void demo::poly_x_line_intersection() {
 	point_cloud cloud;
 
 	sf::RenderWindow window(sf::VideoMode(win_size, win_size), "polygons");
+	plot plotter(window);
 
 	while(window.isOpen()) {
 		vec2 mpos = inv * (vec2)sf::Mouse::getPosition(window);
@@ -37,7 +38,6 @@ void demo::poly_x_line_intersection() {
 			}
 			case sf::Event::MouseButtonPressed: {
 				if(state == FREE) {
-//					P.add(mpos);
 					state = HOLD; 
 				} else if(state == FREE_LINE || state == NO_LINE) {
 					L.a = mpos;
@@ -66,8 +66,8 @@ void demo::poly_x_line_intersection() {
 				break; 
 			}
 		}
-		P.draw(window, wintr);
-		cloud.draw(window, point, wintr);
+		plotter->draw_poly(P);
+		plotter->draw_cloud(cloud);
 		window.display();
 	}
 }

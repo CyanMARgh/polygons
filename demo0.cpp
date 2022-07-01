@@ -20,7 +20,7 @@ void demo::mass_center_and_separation() {
 	monotonic_zones mz;
 
 	sf::RenderWindow window(sf::VideoMode(winSize, winSize), "polygons");
-
+	plot plotter(window);
 
 	vec2 n = {.8, .6};
 
@@ -38,9 +38,7 @@ void demo::mass_center_and_separation() {
 				break;	
 			case sf::Event::MouseButtonPressed: 
 				if(state != DONE) {
-					state = BUILD; 
-					// vec2 mpos = inv * (vec2)sf::Mouse::getPosition(window);
-					// P.add(mpos); 
+					state = BUILD;  
 				}
 				break;
 			case sf::Event::MouseButtonReleased:
@@ -49,7 +47,7 @@ void demo::mass_center_and_separation() {
 			} 
 		}
 		window.clear();
-		P.draw(window, wintr);
+		plotter->draw_poly(P);
 		switch(state) {
 			case BUILD: {
 				vec2 mpos = inv * (vec2)sf::Mouse::getPosition(window);

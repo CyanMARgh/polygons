@@ -30,7 +30,6 @@ class poly {
 	vec2& operator[](s32 i);
 	vec2 operator[](s32 i) const;
 
-	void draw(sf::RenderWindow& rwin, box2 box) const;
 	float area() const;
 	vec2 area_X_center() const;
 	vec2 mass_center() const;
@@ -66,8 +65,6 @@ struct point_cloud : std::vector<vec2> {
 	reindexed_cloud to_sorted() const;
 	reindexed_cloud to_circular_sorted() const;
 	reindexed_cloud minimal_hull() const;
-
-	void draw(sf::RenderWindow& rwin, sf::CircleShape& spr, box2 box) const;
 };
 struct reindexed_cloud : std::vector<u32> {
 	const point_cloud* source;
@@ -99,13 +96,34 @@ struct circle {
 	void draw(sf::RenderWindow& rwin, sf::CircleShape& spr, box2 box) const;
 };
 
-vec2 trivial3(vec2 a, vec2 b, vec2 c);
-circle trivial(const reindexed_cloud& rng);
-circle welzl(reindexed_cloud P, reindexed_cloud R);
-circle welzl(point_cloud cloud);
+namespace welzl {
+	vec2 trivial3(vec2 a, vec2 b, vec2 c);
+	circle trivial(const reindexed_cloud& rng);
+	circle get(reindexed_cloud P, reindexed_cloud R);
+	circle get(point_cloud cloud);
+}
 
 point_cloud to_cloud(const poly& P, const intersection_list& L);
 
-void draw(vec2 p, sf::RenderWindow& rw, sf::CircleShape& spr, box2 b);
+bool check_self_intersections(const poly& P);
 
-//namespace primitives { }
+struct plot {
+	struct options {
+		sf::RenderWindow* rw;
+		box2 box;
+		sf::CircleShape circle;
+
+		options(sf::RenderWindow& rw);
+		void draw_point(vec2 p);
+		void draw_cloud(const point_cloud& cloud);
+		void draw_cloud(const reindexed_cloud& cloud);
+		void draw_poly(const poly& P);
+	};
+	static std::unique_ptr<options> opt;
+	static void init(sf::RenderWindow& rw);
+
+	plot(sf::RenderWindow& rw);
+	// static void poly(const poly& P);
+	// static void circle(circle c);
+	options* operator->();
+};

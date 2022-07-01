@@ -1,15 +1,26 @@
 FLAGS=-lsfml-window -lsfml-system -lsfml-graphics -lpthread -std=c++17 -lm -O3
 
+OBJECTS = $(wildcard tmp/*.o)
+
 all: build/app
 
-build/app: tmp/main.o tmp/demo0.o tmp/utils.o tmp/polygon.o tmp/demo1.o tmp/demo2.o tmp/transforms.o tmp/tree.o tmp/demo3.o tmp/demo4.o
+build/app:\
+		tmp/main.o\
+		tmp/demo0.o tmp/demo1.o tmp/demo2.o tmp/demo3.o tmp/demo4.o\
+		tmp/plot.o\
+		tmp/polygon.o tmp/mass.o tmp/hull.o\
+		tmp/tree.o\
+		tmp/utils.o tmp/transforms.o
 	g++ tmp/main.o\
 		tmp/demo0.o tmp/demo1.o tmp/demo2.o tmp/demo3.o tmp/demo4.o\
-		tmp/polygon.o tmp/tree.o tmp/transforms.o tmp/utils.o -o build/app $(FLAGS)
+		tmp/plot.o\
+		tmp/polygon.o tmp/mass.o tmp/hull.o\
+		tmp/tree.o\
+		tmp/utils.o tmp/transforms.o\
+		-o build/app $(FLAGS)
 
 tmp/main.o: main.cpp demos.h
 	g++ -c main.cpp -o tmp/main.o $(FLAGS)
-
 
 tmp/demo0.o: demo0.cpp demos.h polygon.h transforms.h
 	g++ -c demo0.cpp -o tmp/demo0.o $(FLAGS)
@@ -22,9 +33,17 @@ tmp/demo3.o: demo3.cpp demos.h polygon.h
 tmp/demo4.o: demo4.cpp demos.h polygon.h
 	g++ -c demo4.cpp -o tmp/demo4.o $(FLAGS)	
 
+tmp/plot.o: plot.cpp polygon.h 
+	g++ -c plot.cpp -o tmp/plot.o $(FLAGS)
 
+tmp/hull.o: hull.cpp polygon.h utils.h transforms.h
+	g++ -c hull.cpp -o tmp/hull.o $(FLAGS)
+tmp/mass.o: mass.cpp polygon.h utils.h transforms.h
+	g++ -c mass.cpp -o tmp/mass.o $(FLAGS)
 tmp/polygon.o: polygon.cpp polygon.h utils.h transforms.h
 	g++ -c polygon.cpp -o tmp/polygon.o $(FLAGS)
+
+
 tmp/tree.o: tree.cpp tree.h utils.h
 	g++ -c tree.cpp -o tmp/tree.o $(FLAGS)	
 tmp/transforms.o : transforms.cpp transforms.h utils.h
