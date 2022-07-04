@@ -12,6 +12,8 @@ typedef sf::Vector2f vec2;
 typedef sf::Vector3<u32> vec3u;
 typedef sf::Vector3f vec3;
 
+const float EPS = 1e-9;
+
 float randf();
 vec3 rand_unit();
 vec2 rand_vec2();

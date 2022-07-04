@@ -26,6 +26,7 @@ void demo::minimum_circle() {
 					window.close();
 					break;
 				case sf::Event::MouseButtonPressed: {
+					cloud.push_back(mpos);
 					state = HOLD;
 					break;
 				}
@@ -35,7 +36,7 @@ void demo::minimum_circle() {
 				}
 			} 
 		}
-		if(state == HOLD) cloud.push_back(mpos);
+		//if(state == HOLD) cloud.push_back(mpos);
 		window.clear();
 		plotter->draw_cloud(cloud);
 		welzl::get(cloud).draw(window, outer_circle, wintr);

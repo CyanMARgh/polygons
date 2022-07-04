@@ -157,35 +157,45 @@ vec2 cloud_range::at(u32 i) const {
 	return source->at(a + i);
 }
 bool circle::inside(vec2 p) const {
-	return len2(p - c) <= r2;
+	return len2(p - f1) + len2(p - f2) <= len2(f2 - f1);
 }
+float circle::rad() const {
+	return len(f2 - f1) * .5f;
+}
+vec2 circle::center() const {
+	return (f1 + f2) * .5f;
+}
+
 void circle::draw(sf::RenderWindow& rwin, sf::CircleShape& spr, box2 box) const {
-	spr.setPosition(box * c);
-	float R = sqrt(r2) * box.s.x;
+	spr.setPosition(box * ((f2 + f1) * .5f));
+	float R = len(f2 - f1) * box.s.x * .5f;
 	spr.setRadius(R);
 	spr.setOrigin(R, R);
 	rwin.draw(spr);
 }
-vec2 welzl::trivial3(vec2 a, vec2 b, vec2 c) {
-	// if(a == b) return (b + c) / 2;
-	// if(b == c || a == c) return (a + b) / 2;
-	if(dot(a, b) + 4 * len2(c) <= dot(a + b, c)) return (a + b) / 2;
-	if(dot(a, c) + 4 * len2(b) <= dot(a + c, b)) return (a + c) / 2;
-	if(dot(b, c) + 4 * len2(a) <= dot(b + c, a)) return (b + c) / 2;
-	return circumcenter(a, b, c);
+circle welzl::trivial2(vec2 a, vec2 b) {
+	return {a, b};
+}
+circle welzl::trivial3(vec2 a, vec2 b, vec2 c) {
+	circle ab = trivial2(a, b), bc = trivial2(b, c), ca = trivial2(c, a);
+	if(ab.inside(c)) return ab;
+	if(bc.inside(a)) return bc;
+	if(ca.inside(b)) return ca;
+
+	vec2 o = circumcenter(a, b, c);
+	return {a, 2 * o - a};
 }
 circle welzl::trivial(const reindexed_cloud& rng) {
 	u32 s = rng.size();
-	if(s <= 0) {
+	if(s == 0) {
 		return {};
 	} else if(vec2 a = rng.satat(0); s == 1) {
-		return {a};
+		return {a, a};
 	} else if(vec2 b = rng.satat(1); s == 2) {
-		return {(a + b) / 2, len2((a - b) / 2)};
+		return trivial2(a, b);
 	} else {
 		vec2 c = rng.satat(2);
-		vec2 o = trivial3(a, b, c);
-		return {o, len2(o - a)};
+		return trivial3(a, b, c);
 	}
 }
 circle welzl::get(reindexed_cloud P, reindexed_cloud R) {
@@ -207,5 +217,15 @@ circle welzl::get(point_cloud cloud) {
 	std::vector<u32> ids(cloud.size());	
 	std::iota(ids.begin(), ids.end(), 0), std::random_shuffle(ids.begin(), ids.end());
 	reindexed_cloud P = {ids, &cloud}, R = {{}, &cloud};
-	return get(P, R);
+
+	circle C = get(P, R);
+	// u32 q = 0;
+	// for(auto p : cloud) {
+	// 	if(!C.inside(p)) {
+	// 		q++;
+	// 	}
+	// }
+	// if(q) printf("%u / %lu\n", q, cloud.size());
+
+	return C;
 }

@@ -113,6 +113,10 @@ point_cloud to_cloud(const poly& P, const intersection_list& L) {
 	return cloud;
 }
 
+std::vector<poly> divide(const poly& P, const intersection_list& L) {
+//
+	return {};
+}
 // void draw_line(vec2 p, sf::RenderWindow& rw, sf::CircleShape& spr, box2 box) {
 // 	spr.setPosition(box * p);
 // 	rw.draw(spr);

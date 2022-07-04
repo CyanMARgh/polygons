@@ -89,23 +89,28 @@ struct cloud_range {
 	vec2 at(u32 i) const;
 };
 struct circle {
-	vec2 c = {};
-	float r2 = 0.f;
+	vec2 f1 = {};
+	vec2 f2 = {};
 
 	bool inside(vec2 p) const;
 	void draw(sf::RenderWindow& rwin, sf::CircleShape& spr, box2 box) const;
+
+	float rad() const;
+	vec2 center() const;
 };
 
 namespace welzl {
-	vec2 trivial3(vec2 a, vec2 b, vec2 c);
+	circle trivial2(vec2 a, vec2 b);
+	circle trivial3(vec2 a, vec2 b, vec2 c);
 	circle trivial(const reindexed_cloud& rng);
 	circle get(reindexed_cloud P, reindexed_cloud R);
 	circle get(point_cloud cloud);
 }
 
 point_cloud to_cloud(const poly& P, const intersection_list& L);
+bool check_self_intersections(const poly& P);  //!!!!!!!!
+std::vector<poly> divide(const poly& P, const intersection_list& L) {
 
-bool check_self_intersections(const poly& P);
 
 struct plot {
 	struct options {
