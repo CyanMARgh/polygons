@@ -1,5 +1,6 @@
 #include "polygon.h"
 #include <algorithm>
+#include <numeric>
 
 //base
 poly::poly() {
@@ -47,7 +48,7 @@ intersection monotonic_zones::inspect_zone(zone z, const poly& P, vec2 p, vec2 n
 	float t1 = rlerp(dot(A, n), dot(B, n), dot(p, n));
 	float t2 = lerp(cross(A, n), cross(B, n), t1) - cross(p, n);
 
-	return {t1, t2, z.a};	
+	return {t1, t2, z.a % P.size};	
 }
 monotonic_zones poly::divide_to_monotonics(vec2 n) const {
 	if(!size) return {};
@@ -103,6 +104,7 @@ intersection_list poly::find_intersections(line l) const {
 		if(r.id != -1) il.push_back(r);
 	}
 	if(il.size()%2) throw std::runtime_error("");
+
 	return il;
 }
 point_cloud to_cloud(const poly& P, const intersection_list& L) {
@@ -114,8 +116,39 @@ point_cloud to_cloud(const poly& P, const intersection_list& L) {
 }
 
 std::vector<poly> divide(const poly& P, const intersection_list& L) {
-//
-	return {};
+	u32 n = L.size(), ps = P.size;
+	std::vector<u32> ids(n), rids(n);
+	std::iota(ids.begin(), ids.end(), 0);
+	std::sort(ids.begin(), ids.end(), [&] (u32 a, u32 b) {
+		return L[a].t2 <= L[b].t2;
+	});
+
+	for(u32 i = 0; i < n; i++) { rids[ids[i]] = i; }
+	std::vector<bool> used(n, false);
+
+	auto next_c = [&] (u32 i) { return (i + 1) % n; };
+	auto next_l = [&] (u32 i) { return  ids[rids[i] ^ 1]; };
+
+	std::vector<poly> ans;
+	for(u32 pi = 0; pi < n; pi++){
+		if(used[pi]) continue;
+		poly P0;
+		for(u32 i = pi, j; !used[i]; ) {
+			j = next_c(i);
+			auto Is = L[i], Ie = L[j];
+			u32 id_s = Is.id % ps, id_e = Ie.id % ps;
+			P0.add(lerp(P[id_s], P[id_s + 1], Is.t1));
+			for(auto k = id_s; k % ps != id_e; k++) { 
+				P0.add(P[k + 1]);
+			}
+			P0.add(lerp(P[id_e], P[id_e + 1], Ie.t1));
+			used[i] = true;
+			i = next_l(j);
+		}
+		ans.push_back(P0);
+	}
+
+	return ans;
 }
 // void draw_line(vec2 p, sf::RenderWindow& rw, sf::CircleShape& spr, box2 box) {
 // 	spr.setPosition(box * p);

@@ -109,7 +109,7 @@ namespace welzl {
 
 point_cloud to_cloud(const poly& P, const intersection_list& L);
 bool check_self_intersections(const poly& P);  //!!!!!!!!
-std::vector<poly> divide(const poly& P, const intersection_list& L) {
+std::vector<poly> divide(const poly& P, const intersection_list& L);
 
 
 struct plot {
