@@ -1,6 +1,7 @@
 #include "polygon.h"
 #include <algorithm>
 #include <numeric>
+#include "primitives.h"
 
 //base
 poly::poly() {
@@ -30,7 +31,7 @@ vec2 poly::operator[](s32 i) const {
 }
 
 // is inside
-intersection monotonic_zones::inspect_zone(zone z, const poly& P, vec2 p, vec2 n) {
+intersection geom::inspect_zone( const poly& P, monotonic_zones::zone z, vec2 p, vec2 n) {
 	float py = dot(p, n), ay = dot(P[z.a], n), by = dot(P[z.b], n), cy;
 	float mi = fmin(ay, by), ma = fmax(ay, by);
 
@@ -48,22 +49,22 @@ intersection monotonic_zones::inspect_zone(zone z, const poly& P, vec2 p, vec2 n
 	float t1 = rlerp(dot(A, n), dot(B, n), dot(p, n));
 	float t2 = lerp(cross(A, n), cross(B, n), t1) - cross(p, n);
 
-	return {t1, t2, z.a % P.size};	
+	return {t1, t2, z.a};	
 }
-monotonic_zones poly::divide_to_monotonics(vec2 n) const {
-	if(!size) return {};
+monotonic_zones geom::divide_to_monotonics(const poly& P, vec2 n) {
+	if(!P.size) return {};
 
 	std::vector<monotonic_zones::zone> parts;
 	s32 i0 = 0;
 
 	seg_type type0, type_temp;
-	while((type0 = get_seg_type(i0, n)) == seg_type::ANY && i0 < size) i0++;
-	if(i0 == size) return {{{0, (s32)size, type0}}};
+	while((type0 = get_seg_type(P, i0, n)) == seg_type::ANY && i0 < P.size) i0++;
+	if(i0 == P.size) return {{{0, (s32)P.size, type0}}};
 	i0++;
-	while(type_temp = get_seg_type(i0, n), (type_temp == seg_type::ANY || type_temp == type0) && i0 <= size) i0++;
+	while(type_temp = get_seg_type(P, i0, n), (type_temp == seg_type::ANY || type_temp == type0) && i0 <= P.size) i0++;
 
-	for(s32 i = i0, is = i0; i < i0 + size; i++) {
-		seg_type type_next = get_seg_type(i + 1, n);
+	for(s32 i = i0, is = i0; i < i0 + P.size; i++) {
+		seg_type type_next = get_seg_type(P, i + 1, n);
 		if(type_next == seg_type::ANY) continue;
 		if(type_temp != type_next) {
 			parts.push_back({is, i + 1, type_temp});
@@ -72,35 +73,29 @@ monotonic_zones poly::divide_to_monotonics(vec2 n) const {
 	}
 	return {parts};
 }
-s32 poly::is_inside_val(const monotonic_zones& mz, vec2 p, vec2 n) const {
+s32 geom::is_inside_val(const poly& P, const monotonic_zones& mz, vec2 p, vec2 n) {
 	s32 s = 0;
 	for(auto z : mz.parts) {
-		auto r = monotonic_zones::inspect_zone(z, *this, p, n);
+		auto r = geom::inspect_zone(P, z, p, n);
 		if(r.id != -1) s += (r.t2 < 0) * (z.type == seg_type::UP ? 1 : -1);
 	}
 	return s;
 }
-seg_type poly::get_seg_type(s32 i, vec2 n) const {
-	float q = dot(n, (*this)[i+1]-(*this)[i]);
+seg_type geom::get_seg_type(const poly& P, s32 i, vec2 n) {
+	float q = dot(n, P[i+1]-P[i]);
 	return q > 0 ? seg_type::UP : q < 0 ? seg_type::DOWN : seg_type::ANY; 
-}
-void monotonic_zones::print() {
-	for(auto z : parts) {
-		printf("[%d,%d] ", z.a, z.b);
-	}
-	printf("\n");
 }
 
 //slice
-intersection_list poly::find_intersections(line l) const {
+intersection_list geom::find_intersections(const poly& P, line l) {
 	if(l.b == l.a) return {};
 	vec2 ab = l.b - l.a;
 	vec2 n = rrot(ab);
-	monotonic_zones mz = divide_to_monotonics(n);
+	monotonic_zones mz = divide_to_monotonics(P, n);
 
 	intersection_list il = {};
 	for(auto z : mz.parts) {
-		auto r = mz.inspect_zone(z, *this, l.a, n);
+		auto r = geom::inspect_zone(P, z, l.a, n);
 		if(r.id != -1) il.push_back(r);
 	}
 	if(il.size()%2) throw std::runtime_error("");

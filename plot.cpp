@@ -1,38 +1,51 @@
+#include "plot.h"
 #include "polygon.h"
+#include "primitives.h"
 
-plot::options::options(sf::RenderWindow& rw) {
+plotter::base::base(sf::RenderWindow& rw) {
 	this->rw = &rw;
-	circle.setRadius(5);
-	circle.setOrigin(5, 5);
+	point_spr.setRadius(5);
+	point_spr.setOrigin(5, 5);
+	circle_spr.setOutlineThickness(2);
+	circle_spr.setOutlineColor(sf::Color::Red);
+	circle_spr.setFillColor(sf::Color(0,0,0,0));
+	circle_spr.setPointCount(400);
 	float win_size = rw.getSize().y;
 	box = {win_size, -win_size, 0, win_size};
 }
-std::unique_ptr<plot::options> plot::opt = nullptr;
-void plot::init(sf::RenderWindow& rw) {
-	if(!opt || opt->rw != &rw) opt = std::make_unique<options>(rw);
+std::unique_ptr<plotter::base> plotter::b = nullptr;
+void plotter::init(sf::RenderWindow& rw) {
+	if(!b || b->rw != &rw) b = std::make_unique<base>(rw);
 }
-plot::plot(sf::RenderWindow& rw) {
+plotter::plotter(sf::RenderWindow& rw) {
 	init(rw);
 }
-plot::options* plot::operator->() {
-	return &*opt;
+plotter::base* plotter::operator->() {
+	return &*b;
 }
 
-void plot::options::draw_point(vec2 p) {
-	circle.setPosition(box * p);
-	rw->draw(circle);
+void plotter::base::draw(vec2 p) {
+	point_spr.setPosition(box * p);
+	rw->draw(point_spr);
 }
-void plot::options::draw_cloud(const point_cloud& cloud) {
+void plotter::base::draw(const circle& c) {
+	circle_spr.setPosition(box * c.center());
+	float r = c.rad() * box.s.y;
+	circle_spr.setRadius(r);
+	circle_spr.setOrigin(r, r);
+	rw->draw(circle_spr);
+}
+void plotter::base::draw(const point_cloud& cloud) {
 	for(auto p : cloud) {
-		draw_point(p);
+		draw(p);
 	}
 }
-void plot::options::draw_cloud(const reindexed_cloud& cloud) {
+void plotter::base::draw(const reindexed_cloud& cloud) {
 	for(auto i : cloud) {
-		draw_point(cloud.sat(i));
+		draw(cloud.sat(i));
 	}
 }
-void plot::options::draw_poly(const poly& P) {
+void plotter::base::draw(const poly& P) {
 	if(P.size < 1) return;
 	sf::Vertex *vlines = new sf::Vertex[P.size + 1];
 	for(u32 i = 0; i <= P.size; i++) {
@@ -41,8 +54,3 @@ void plot::options::draw_poly(const poly& P) {
 	rw->draw(vlines, P.size + 1, sf::LineStrip);
 	delete[] vlines;
 }
-
-	// static void circle(circle c);
-	// static void cloud(const point_cloud& cloud);
-	// static void cloud(const reindexed_cloud& cloud);
-//};

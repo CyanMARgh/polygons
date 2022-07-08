@@ -1,17 +1,11 @@
 #pragma once
+
 #include <vector>
 #include "utils.h"
 #include "transforms.h"
+#include "geometry.h"
 
-struct line {
-	vec2 a, b;
-};
-
-struct monotonic_zones;
-struct reindexed_cloud;
-struct intersection;
-typedef std::vector<intersection> intersection_list;
-
+struct intersection_list : std::vector<intersection> {};
 enum class seg_type {
 	UP, DOWN, ANY
 };
@@ -29,106 +23,77 @@ class poly {
 	void add(vec2 p) ;
 	vec2& operator[](s32 i);
 	vec2 operator[](s32 i) const;
-
-	float area() const;
-	vec2 area_X_center() const;
-	vec2 mass_center() const;
-
-	monotonic_zones divide_to_monotonics(vec2 n = {0, 1}) const;
-	intersection_list find_intersections(line l) const;
-
-	s32 is_inside_val(const monotonic_zones& mz, vec2 p, vec2 n = {0, 1}) const;
-	seg_type get_seg_type(s32 i, vec2 n) const;
 };
-// struct generic_poly : std::vector<poly> {
-
-// };
-
-struct intersection {
-	float t1, t2;
-	s32 id;
-	//bool i_o;
-};
-
 struct monotonic_zones {
 	struct zone {
 		s32 a, b;
 		seg_type type;
 	};
 	std::vector<zone> parts;
-	static intersection inspect_zone(zone z, const poly& P, vec2 p, vec2 n = {0, 1});
-
-	void print();
 };
-
-struct point_cloud : std::vector<vec2> {
-	reindexed_cloud to_sorted() const;
-	reindexed_cloud to_circular_sorted() const;
-	reindexed_cloud minimal_hull() const;
-};
+struct point_cloud : std::vector<vec2> { };
 struct reindexed_cloud : std::vector<u32> {
 	const point_cloud* source;
 
 	reindexed_cloud(std::vector<u32> ids = {}, const point_cloud* source = nullptr);
 
-	reindexed_cloud hull_by_circular() const;
-	reindexed_cloud minimal_hull() const;
 	poly make_poly() const;
-
-	std::pair<bool, poly> verify_minimal_hull() const;
-	static std::tuple<bool, point_cloud, poly> minimal_hull_test(u32 N);
 
 	vec2 satat(u32 i) const;
 	vec2 sat(u32 i) const;
 };
-struct cloud_range {
-	point_cloud* source;
-	u32 a, b;
-
-	s32 size() const; 
-	vec2 at(u32 i) const;
-};
-struct circle {
-	vec2 f1 = {};
-	vec2 f2 = {};
-
-	bool inside(vec2 p) const;
-	void draw(sf::RenderWindow& rwin, sf::CircleShape& spr, box2 box) const;
-
-	float rad() const;
-	vec2 center() const;
-};
-
-namespace welzl {
-	circle trivial2(vec2 a, vec2 b);
-	circle trivial3(vec2 a, vec2 b, vec2 c);
-	circle trivial(const reindexed_cloud& rng);
-	circle get(reindexed_cloud P, reindexed_cloud R);
-	circle get(point_cloud cloud);
-}
 
 point_cloud to_cloud(const poly& P, const intersection_list& L);
-bool check_self_intersections(const poly& P);  //!!!!!!!!
 std::vector<poly> divide(const poly& P, const intersection_list& L);
 
 
-struct plot {
-	struct options {
-		sf::RenderWindow* rw;
-		box2 box;
-		sf::CircleShape circle;
+namespace geom {
+	//mass
+	float area(const poly& P);
+	vec2 area_X_center(const poly& P);
+	vec2 mass_center(const poly& P);
 
-		options(sf::RenderWindow& rw);
-		void draw_point(vec2 p);
-		void draw_cloud(const point_cloud& cloud);
-		void draw_cloud(const reindexed_cloud& cloud);
-		void draw_poly(const poly& P);
-	};
-	static std::unique_ptr<options> opt;
-	static void init(sf::RenderWindow& rw);
+	//monotonics
+	monotonic_zones divide_to_monotonics(const poly& P, vec2 n = {0, 1});
+	seg_type get_seg_type(const poly& P, s32 i, vec2 n = {0, 1});
 
-	plot(sf::RenderWindow& rw);
-	// static void poly(const poly& P);
-	// static void circle(circle c);
-	options* operator->();
-};
+	intersection inspect_zone(const poly& P, monotonic_zones::zone z, vec2 p, vec2 n = {0, 1});
+	intersection_list find_intersections(const poly& P, line l);
+	s32 is_inside_val(const poly& P, const monotonic_zones& mz, vec2 p, vec2 n = {0, 1});
+
+	//hull
+	reindexed_cloud to_sorted(const point_cloud&);
+	reindexed_cloud minimal_hull(const point_cloud&);
+	reindexed_cloud to_circular_sorted(const point_cloud&);
+	reindexed_cloud hull_by_circular(const reindexed_cloud&);
+
+	//			add minimal_hull_circular
+	reindexed_cloud minimal_hull(const reindexed_cloud&);
+	std::pair<bool, poly> verify_minimal_hull(const reindexed_cloud& cloud);
+	std::tuple<bool, point_cloud, poly> minimal_hull_test(u32 N);
+
+	//welzl
+	circle welzl_2(vec2 a, vec2 b);
+	circle welzl_3(vec2 a, vec2 b, vec2 c);
+	circle welzl_trivial(const reindexed_cloud& rng);
+	circle welzl(reindexed_cloud P, reindexed_cloud R);
+	circle welzl(point_cloud cloud);
+
+}
+
+
+// struct graph {
+// 	struct edge {
+// 		u32 a, b;
+// 	};
+// 	struct intersection {
+// 		edge e0, e1;
+// 	};
+// 	std::vector<vec2> vts;
+// 	std::vector<edge> edges;
+
+// 	static graph from_poly(const poly& P);
+// 	std::vector<intersection> self_intersections() const;
+// 	void add_intersections(const std::vector<intersection>& inters);
+// 	std::vector<poly> extract_poly() const;
+// };

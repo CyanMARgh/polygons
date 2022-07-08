@@ -7,7 +7,7 @@ int main() {
 	//demo::convex_hull();
 	//demo::convex_hull_tests();
 	//demo::trees();
-	//demo::minimum_circle();
-	demo::poly_x_line_intersection();
+	demo::minimum_circle();
+	//demo::poly_x_line_intersection();
 	return 0;
 }

@@ -8,9 +8,7 @@ vec3 rand_unit() {
 	float r = sqrt(1-y*y);
 	return {r*sinf(phi), y, r*cosf(phi)};
 }
-vec2 rand_vec2() {
-	return {randf(), randf()};
-}
+vec2 rand_vec2() { return {randf(), randf()}; }
 
 vec3 operator*(vec3 a, vec3 b) { return {a.x * b.x, a.y * b.y, a.z * b.z}; }
 vec3 operator*(vec3 a, float b) { return {a.x * b, a.y * b, a.z * b}; }

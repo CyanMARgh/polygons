@@ -1,8 +1,10 @@
 #include "demos.h"
 #include "polygon.h"
+#include "plot.h"
 #include "transforms.h"
 
 void demo::mass_center_and_separation() {
+	using namespace geom;
 	enum State { BUILD, FREE, DONE } state = FREE;
 	struct PointData { vec2 pos; sf::Color color; };
 	std::vector<PointData> points = {};
@@ -20,7 +22,7 @@ void demo::mass_center_and_separation() {
 	monotonic_zones mz;
 
 	sf::RenderWindow window(sf::VideoMode(winSize, winSize), "polygons");
-	plot plotter(window);
+	plotter plt(window);
 
 	vec2 n = {.8, .6};
 
@@ -33,7 +35,7 @@ void demo::mass_center_and_separation() {
 			case sf::Event::KeyPressed:
 				if(e.text.unicode == 10 && P.size > 2) {
 					state = DONE;
-					mz = P.divide_to_monotonics(n);
+					mz = divide_to_monotonics(P, n);
 				}
 				break;	
 			case sf::Event::MouseButtonPressed: 
@@ -47,7 +49,7 @@ void demo::mass_center_and_separation() {
 			} 
 		}
 		window.clear();
-		plotter->draw_poly(P);
+		plt->draw(P);
 		switch(state) {
 			case BUILD: {
 				vec2 mpos = inv * (vec2)sf::Mouse::getPosition(window);
@@ -55,14 +57,14 @@ void demo::mass_center_and_separation() {
 			}
 			case FREE: {
 				if(P.size > 2) {
-					center.setPosition(wintr * P.mass_center());
+					center.setPosition(wintr * mass_center(P));
 					window.draw(center);
 				}
 				break; 
 			}
 			case DONE: {
 				vec2 r = rand_vec2();
-				points.push_back({wintr * r, P.is_inside_val(mz, r, n) > 0 ? sf::Color(234,182,118) : sf::Color(171,219,227)});
+				points.push_back({wintr * r, is_inside_val(P, mz, r, n) > 0 ? sf::Color(234,182,118) : sf::Color(171,219,227)});
 				for(const auto& p: points) {
 					point.setFillColor(p.color);
 					point.setPosition(p.pos);

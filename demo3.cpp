@@ -1,6 +1,8 @@
 #include "demos.h"
+#include "primitives.h"
 #include "polygon.h"
 #include "transforms.h"
+#include "plot.h"
 
 void demo::minimum_circle() {
 	point_cloud cloud = {};
@@ -15,7 +17,7 @@ void demo::minimum_circle() {
 	outer_circle.setPointCount(300);
 
 	sf::RenderWindow window(sf::VideoMode(win_size, win_size), "polygons");
-	plot plotter(window);
+	plotter plt(window);
 
 	enum state_t { FREE, HOLD } state = FREE;
 	while (window.isOpen()) {
@@ -38,8 +40,8 @@ void demo::minimum_circle() {
 		}
 		//if(state == HOLD) cloud.push_back(mpos);
 		window.clear();
-		plotter->draw_cloud(cloud);
-		welzl::get(cloud).draw(window, outer_circle, wintr);
+		plt->draw(cloud);
+		plt->draw(geom::welzl(cloud));
 		window.display();
 	}
 }

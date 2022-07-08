@@ -1,5 +1,6 @@
 #include "demos.h"
 #include "polygon.h"
+#include "plot.h"
 #include "transforms.h"
 #include <thread>
 
@@ -12,7 +13,7 @@ void demo::convex_hull() {
 	point.setOrigin(point_rad, point_rad);
 
 	sf::RenderWindow window(sf::VideoMode(win_size, win_size), "polygons");
-	plot plotter(window);
+	plotter plt(window);
 
 	sf::Clock clock;
 
@@ -38,10 +39,10 @@ void demo::convex_hull() {
 		if(state == HOLD) cloud.push_back(mpos);
 		window.clear();
 		if(cloud.size() > 2) {
-			poly P = cloud.to_circular_sorted().hull_by_circular().make_poly();
-			plotter->draw_poly(P);
+			poly P = geom::hull_by_circular(geom::to_circular_sorted(cloud)).make_poly();
+			plt->draw(P);
 		}
-		plotter->draw_cloud(cloud);
+		plt->draw(cloud);
 		window.display();
 	}
 }
@@ -54,7 +55,7 @@ void demo::convex_hull_tests() {
 	point.setOrigin(point_rad, point_rad);
 
 	sf::RenderWindow window(sf::VideoMode(win_size, win_size), "polygons");
-	plot plotter(window);
+	plotter plt(window);
 
 	u32 total = 0, failed = 0;
 
@@ -66,11 +67,11 @@ void demo::convex_hull_tests() {
 				break;
 			} 
 		}
-		auto [res, cloud, P] = reindexed_cloud::minimal_hull_test(50);
+		auto [res, cloud, P] = geom::minimal_hull_test(50);
 		++total, failed += 1 - res; 
 		window.clear(res ? sf::Color(0,0,0) : sf::Color(255,0,0));
-		plotter->draw_poly(P);
-		plotter->draw_cloud(cloud);
+		plt->draw(P);
+		plt->draw(cloud);
 		window.display();
 		std::this_thread::sleep_for(std::chrono::milliseconds(res ? 0 : 3000));
 	}

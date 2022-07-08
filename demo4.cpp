@@ -1,8 +1,11 @@
 #include "demos.h"
 #include "polygon.h"
 #include "transforms.h"
+#include "plot.h"
+#include "primitives.h"
 
 void demo::poly_x_line_intersection() {
+	using namespace geom;
 	enum state_t { 
 		FREE, HOLD, NO_LINE,
 		FREE_LINE, HOLD_LINE, SLICED
@@ -20,7 +23,7 @@ void demo::poly_x_line_intersection() {
 	point_cloud cloud;
 
 	sf::RenderWindow window(sf::VideoMode(win_size, win_size), "polygons");
-	plot plotter(window);
+	plotter plt(window);
 
 	vec2 mpos_p;
 
@@ -37,10 +40,9 @@ void demo::poly_x_line_intersection() {
 			case sf::Event::KeyPressed: {
 				if(e.text.unicode == 10 && P.size > 2) {
 					if(state == FREE || state == HOLD) {
-						printf("area = %f\n", P.area());
 						state = NO_LINE;
 					} else if (state == FREE_LINE || state == HOLD_LINE) {
-						P_sliced = divide(P, P.find_intersections(L));
+						P_sliced = divide(P, find_intersections(P, L));
 						state = SLICED;
 					}
 				}
@@ -72,7 +74,7 @@ void demo::poly_x_line_intersection() {
 			}
 			case HOLD_LINE: {
 				L.b = mpos;
-				cloud = to_cloud(P, P.find_intersections(L));
+				cloud = to_cloud(P, find_intersections(P, L));
 				break; 
 			}
 		}
@@ -80,12 +82,11 @@ void demo::poly_x_line_intersection() {
 
 		if(state == SLICED) {
 			if(u32 s = P_sliced.size()) {
-				plotter->draw_poly(P_sliced[f_id % s]);
+				plt->draw(P_sliced[f_id % s]);
 			}
 		} else {
-			plotter->draw_poly(P);
-			//plotter->draw_cloud(cloud);
-			if(u32 s = cloud.size()) plotter->draw_point(cloud[f_id % s]);
+			plt->draw(P);
+			if(u32 s = cloud.size()) plt->draw(cloud[f_id % s]);
 		}
 		window.display();
 	}
