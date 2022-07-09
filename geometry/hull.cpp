@@ -1,5 +1,6 @@
 #include "polygon.h"
 #include "primitives.h"
+#include "utils.h"
 #include <algorithm>
 #include <numeric>
 

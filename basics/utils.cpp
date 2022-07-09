@@ -1,5 +1,5 @@
 #include "utils.h"
-#include "transforms.h"
+#include "primitives.h"
 
 float randf() { return (float)rand() / RAND_MAX; }
 vec3 rand_unit() {

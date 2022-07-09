@@ -1,7 +1,6 @@
 #pragma once
 
-#include "geometry.h"
-#include "transforms.h"
+#include "primitives.h"
 #include <memory>
 #include <SFML/Graphics.hpp>
 

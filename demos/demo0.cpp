@@ -1,7 +1,8 @@
 #include "demos.h"
 #include "polygon.h"
 #include "plot.h"
-#include "transforms.h"
+#include "primitives.h"
+#include "utils.h"
 
 void demo::mass_center_and_separation() {
 	using namespace geom;

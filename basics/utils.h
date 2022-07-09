@@ -2,21 +2,7 @@
 
 #include <SFML/Graphics.hpp>
 #include <cmath>
-
-typedef uint8_t u8;
-typedef uint32_t u32;
-typedef int32_t s32;
-
-
-typedef sf::Vector2u vec2u;
-typedef sf::Vector2f vec2;
-typedef sf::Vector3<u32> vec3u;
-typedef sf::Vector3f vec3;
-
-// struct vec2u : sf::Vector2u {};
-// struct vec2 : sf::Vector2f {};
-// struct vec3u : sf::Vector3<u32> {};
-// struct vec3 : sf::Vector3f {};
+#include "geometry.h"
 
 const float EPS = 1e-9;
 

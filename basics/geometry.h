@@ -15,6 +15,8 @@ typedef sf::Vector3f vec3;
 //primitives
 struct line;
 struct circle;
+struct box2;
+struct mat2x2;
 
 //complex structures
 struct poly;

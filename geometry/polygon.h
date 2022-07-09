@@ -1,8 +1,6 @@
 #pragma once
 
 #include <vector>
-#include "utils.h"
-#include "transforms.h"
 #include "geometry.h"
 
 struct intersection_list : std::vector<intersection> {};

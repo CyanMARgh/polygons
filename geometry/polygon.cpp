@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <numeric>
 #include "primitives.h"
+#include "utils.h"
 
 //base
 poly::poly() {

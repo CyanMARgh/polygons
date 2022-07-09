@@ -1,7 +1,21 @@
 #pragma once
+#include "geometry.h"
 
-#include "utils.h"
+struct line {
+	vec2 a, b;
+};
+struct intersection {
+	float t1, t2;
+	s32 id;
+};
+struct circle {
+	vec2 f1 = {};
+	vec2 f2 = {};
 
+	bool inside(vec2 p) const;
+	float rad() const;
+	vec2 center() const;
+};
 struct box2 {
 	vec2 s = {1.f, 1.f}, p0 = {0.f, 0.f}; 
 
@@ -15,12 +29,11 @@ struct box2 {
 
 	vec2 center() const;
 	vec2 rad() const;
-
 	box2 inv() const;
-};
 
-vec2 operator* (const box2& A, vec2 v);
-box2 operator* (const box2& A, const box2& B);
+	vec2 operator* (vec2 v) const;
+	box2 operator* (const box2& B) const;
+};
 
 struct mat2x2 {
 	float a, b, c, d;
@@ -31,7 +44,7 @@ struct mat2x2 {
 	mat2x2 inv() const;	
 	float det() const;
 	mat2x2 transposed() const;
-};
 
-mat2x2 operator*(const mat2x2& A, const mat2x2& B);
-vec2 operator*(const mat2x2& A, vec2 v);
+	mat2x2 operator*(const mat2x2& B) const;
+	vec2 operator*(vec2 v) const;
+};

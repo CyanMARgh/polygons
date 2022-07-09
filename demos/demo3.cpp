@@ -1,7 +1,6 @@
 #include "demos.h"
 #include "primitives.h"
 #include "polygon.h"
-#include "transforms.h"
 #include "plot.h"
 
 void demo::minimum_circle() {

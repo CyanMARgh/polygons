@@ -16,21 +16,34 @@ def get_sources(blacklist = {}, path = './'):
 def get_headers(file):
 	ignore = {"#pragma"}
 	headers = set()
-	with open(file, 'r') as file:
-		for line in file:
-			words = line.split()
-			if len(words) == 0 or words[0] in ignore: continue
-			if words[0] == "#include" and len(words) == 2:
-				header = words[1]
-				if header[0] == '"':
-					headers.add(header[1:-1])
-			else: break
+	try:
+		F = open(file, 'r')
+	except IOError:
+		raise NameError("no file found (get_headers): " + file)
+	else:
+		with F:
+			for line in F:
+				words = line.split()
+				if len(words) == 0 or words[0] in ignore: continue
+				if words[0] == "#include" and len(words) == 2:
+					header_w = words[1]
+					if header_w[0] == '"':
+						header_f = header_w[1:-1]
+						if(header_f[-2:] != ".h"):
+							raise NameError("invalid #include: " + header_w +", in file:" + file)
+						headers.add(header_f)
+				else: break
+
 	return headers
-def get_headers_recursive(file):
-	headers = get_headers(file)
+def get_headers_recursive(header_dirs_dict, file):
+	headers = get_headers((header_dirs_dict[file] if file in header_dirs_dict else "") + file)
 	all_headers = headers
 	for h in headers:
-		all_headers = set.union(all_headers, get_headers_recursive(h))
+		try:
+			all_headers = set.union(all_headers, get_headers_recursive(header_dirs_dict, h))
+		except Exception as e:
+			print(e)
+			raise NameError("#include from file: " + file)
 	return all_headers
 def get_hedaer_dirs_dict(blacklist = set(), path = "./"):
 	walker = next(os.walk(path))
@@ -56,7 +69,7 @@ def get_obj_dict(sources):
 		obj_dict[s] = get_obj_name(s)
 	return obj_dict
 def default_target(header_dirs_dict, obj_dict, source_name, flags, marker = "i", tmp_folder = "tmp/", compiler = "g++"):
-	headers = get_headers_recursive(source_name)
+	headers = get_headers_recursive(header_dirs_dict, source_name)
 	header_folders = get_required_paths(header_dirs_dict, headers)
 	obj_name = obj_dict[source_name]
 	result = tmp_folder + obj_name + ": " + source_name + " " + tmp_folder + marker
@@ -97,4 +110,7 @@ def build():
 	with open(mf_name, 'w') as f: f.write(generate_makefile())
 	os.system("make -f" + mf_name)
 
-build()
+try:
+	build()
+except Exception as e:
+	print(e)
