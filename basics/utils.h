@@ -3,8 +3,11 @@
 #include <SFML/Graphics.hpp>
 #include <cmath>
 #include "geometry.h"
+#include <algorithm>
+#include <vector>
+#include <numeric>
 
-const float EPS = 1e-9;
+const float EPS = 1e-7;
 
 float randf();
 vec3 rand_unit();
@@ -52,3 +55,22 @@ vec3 lerp(vec3 a, vec3 b, float t);
 vec2 lrot(vec2 a);
 vec2 rrot(vec2 a);
 float rlerp(float a, float b, float c);
+
+enum class cross_type { 
+	NONE = 0,
+	HAS = 1,
+	BROKEN = 2
+};
+
+s32 sign(float v);
+cross_type check_intersection(vec2 a, vec2 b, vec2 c, vec2 d);
+
+template<typename T>
+std::pair<std::vector<u32>, std::vector<u32>> make_permutation(const std::vector<T>& P, std::function<bool(T, T)> cmp) {
+	u32 n = P.size();
+	std::vector<u32> ids(n), rids(n);
+	std::iota(ids.begin(), ids.end(), 0);
+	std::sort(ids.begin(), ids.end(), [&P, &cmp] (u32 a, u32 b) {return cmp(P[a], P[b]); });
+	for(u32 i = 0; i < n; i++) rids[ids[i]] = i;
+	return {ids, rids};
+}

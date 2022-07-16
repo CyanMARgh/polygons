@@ -1,5 +1,6 @@
 #pragma once
 
+#include <fstream>
 #include <vector>
 #include "geometry.h"
 
@@ -8,9 +9,8 @@ enum class seg_type {
 	UP, DOWN, ANY
 };
 
-class poly {
+struct poly {
 	std::vector<vec2> points;
-	public:
 	u32 size = 0;
 
 	poly() ;
@@ -44,7 +44,6 @@ struct reindexed_cloud : std::vector<u32> {
 point_cloud to_cloud(const poly& P, const intersection_list& L);
 std::vector<poly> divide(const poly& P, const intersection_list& L);
 
-
 namespace geom {
 	//mass
 	float area(const poly& P);
@@ -77,6 +76,17 @@ namespace geom {
 	circle welzl(reindexed_cloud P, reindexed_cloud R);
 	circle welzl(point_cloud cloud);
 
+	//?
+	bool has_self_intersections(const poly& P);
+	bool is_valid(const poly& P);
+
+	struct invalid_read : public std::invalid_argument {
+		invalid_read(const std::string& filename);
+	};
+
+	//serialization
+	std::ofstream& operator<<(std::ofstream& fout, const poly& P);
+	std::ifstream& operator>>(std::ifstream& fin, poly& P);
 }
 
 

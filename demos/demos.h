@@ -7,4 +7,5 @@ namespace demo {
 	void trees();
 	void minimum_circle();
 	void poly_x_line_intersection();
+	void surface_demo();
 }

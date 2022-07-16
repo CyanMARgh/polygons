@@ -1,6 +1,9 @@
 #include "plot.h"
 #include "polygon.h"
 #include "primitives.h"
+#include "surface.h"
+#include <string.h>
+#include "utils.h"
 
 plotter::base::base(sf::RenderWindow& rw) {
 	this->rw = &rw;
@@ -53,4 +56,20 @@ void plotter::base::draw(const poly& P) {
 	}
 	rw->draw(vlines, P.size + 1, sf::LineStrip);
 	delete[] vlines;
+}
+void plotter::base::draw(const surface& S) {
+	vec2u size = S.size;
+	sf::Image img;
+	img.create(size.x, size.y);
+	u32* imgdata = (u32*)img.getPixelsPtr();
+	for(u32 y = 0, i = 0; y < size.y; y++) {
+		for(u32 x = 0; x < size.x; x++, i++) {
+			imgdata[i] = S.data[x + (size.y - 1 - y) * size.x];
+		}
+	}
+	sf::Texture tex;
+	tex.loadFromImage(img);
+	any_spr.setTexture(tex);
+	any_spr.setScale((vec2)rw->getSize() / (vec2)S.size);
+	rw->draw(any_spr);
 }

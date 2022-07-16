@@ -20,7 +20,7 @@ struct box2 {
 	vec2 s = {1.f, 1.f}, p0 = {0.f, 0.f}; 
 
 	box2(float sx = 1.f, float sy = 1.f, float x0 = 0.f, float y0 = 0.f);
-	box2(vec2 s, vec2 p0);
+	box2(vec2 s, vec2 p0 = {0.f, 0.f});
 
 	vec2 bl() const;
 	vec2 tr() const;

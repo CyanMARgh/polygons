@@ -1,6 +1,7 @@
 #include "polygon.h"
 #include <algorithm>
 #include <numeric>
+#include <set>
 #include "primitives.h"
 #include "utils.h"
 
@@ -113,13 +114,9 @@ point_cloud to_cloud(const poly& P, const intersection_list& L) {
 
 std::vector<poly> divide(const poly& P, const intersection_list& L) {
 	u32 n = L.size(), ps = P.size;
-	std::vector<u32> ids(n), rids(n);
-	std::iota(ids.begin(), ids.end(), 0);
-	std::sort(ids.begin(), ids.end(), [&] (u32 a, u32 b) {
-		return L[a].t2 <= L[b].t2;
-	});
+	if(!n) return {P};
+	auto [ids, rids] = make_permutation<intersection>(L, [] (intersection a, intersection b) { return a.t2 <= b.t2; });
 
-	for(u32 i = 0; i < n; i++) { rids[ids[i]] = i; }
 	std::vector<bool> used(n, false);
 
 	auto next_c = [&] (u32 i) { return (i + 1) % n; };
@@ -146,7 +143,64 @@ std::vector<poly> divide(const poly& P, const intersection_list& L) {
 
 	return ans;
 }
-// void draw_line(vec2 p, sf::RenderWindow& rw, sf::CircleShape& spr, box2 box) {
-// 	spr.setPosition(box * p);
-// 	rw.draw(spr);
-// }
+
+bool geom::has_self_intersections(const poly& P) {
+	for(u32 n = P.size, i = 0; i < n; i++) {
+		vec2 a = P[i], b = P[i + 1];
+		for(u32 j = i + 2; j < n - !i; j++) {
+			vec2 c = P[j], d = P[j + 1];
+			if(check_intersection(a, b, c, d) != cross_type::NONE) return true;
+		}
+	}
+	return false;
+
+	// u32 n = P.size;
+	// if(n < 4) return false;
+	// auto [ids, rids] = make_permutation<vec2>(P.points, [] (vec2 a, vec2 b ) { return a.y < b.y; });
+
+	// struct edge {
+	// 	u32 a, b;
+	// 	edge(u32 a, u32 b) : a(a), b(b) { }
+	// 	bool operator<(const edge& o) const { return a == o.a ? b < o.b : a < o.a; }
+	// };
+	// auto intersects = [&P](edge e1, edge e2) { 
+	// 	return e1.a != e2.b && e1.b != e2.a &&
+	// 		check_intersection(P[e1.a], P[e1.b], P[e2.a], P[e2.b]) != cross_type::NONE;
+	// };
+
+	// std::set<edge> es = {};
+
+	// for(u32 i = 0; i < n; i++) {
+	// 	u32 id = ids[i];
+	// 	u32 j0 = (id + n - 1) % n, j1 = (id + 1) % n; //nbs ids
+	// 	edge e0 = {j0, id}, e1 = {id, j1};
+	// 	bool c0 = i > rids[j0], c1 = i > rids[j1];
+	// 	if(c0) {
+	// 		es.erase(e0);
+	// 	} else {
+	// 		for(auto e : es) {
+	// 			if(intersects(e, e0)) {
+	// 				printf("{%d %d} x {%d %d}!\n", e.a, e.b, e0.a, e0.b);
+	// 				return true;
+	// 			}
+	// 		}
+	// 	}
+	// 	if(c1) {
+	// 		es.erase(e1); 
+	// 	} else {
+	// 		for(auto e : es) {
+	// 			if(intersects(e, e1)) {
+	// 				printf("{%d %d} x {%d %d}!\n", e.a, e.b, e1.a, e1.b);
+	// 				return true;
+	// 			}
+	// 		}
+	// 	}
+	// 	if(!c0) es.insert(e0);
+	// 	if(!c1) es.insert(e1);
+	// }
+	// return false;
+}
+
+bool geom::is_valid(const poly& P) {
+	return area(P) > 0 && !has_self_intersections(P);
+}

@@ -9,6 +9,7 @@ struct plotter {
 		sf::RenderWindow* rw;
 		box2 box;
 		sf::CircleShape point_spr, circle_spr;
+		sf::Sprite any_spr;
 
 		base(sf::RenderWindow& rw);
 		void draw(vec2 p);
@@ -16,6 +17,7 @@ struct plotter {
 		void draw(const reindexed_cloud& cloud);
 		void draw(const poly& P);
 		void draw(const circle& C);
+		void draw(const surface& S);
 	};
 	static std::unique_ptr<base> b;
 	static void init(sf::RenderWindow& rw);

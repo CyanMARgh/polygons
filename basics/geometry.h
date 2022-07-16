@@ -4,9 +4,11 @@
 
 //basic types
 typedef uint8_t u8;
+typedef int8_t s8;
 typedef uint32_t u32;
 typedef int32_t s32;
 
+typedef sf::Vector2i vec2s;
 typedef sf::Vector2u vec2u;
 typedef sf::Vector2f vec2;
 typedef sf::Vector3<u32> vec3u;
@@ -27,4 +29,7 @@ struct reindexed_cloud;
 struct intersection;
 struct intersection_list;
 enum class seg_type;
+
+struct surface;
+struct sliceable_group;
 //struct graph;

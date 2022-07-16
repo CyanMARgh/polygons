@@ -37,13 +37,17 @@ void demo::poly_x_line_intersection() {
 				break;
 			}
 			case sf::Event::KeyPressed: {
-				if(e.text.unicode == 10 && P.size > 2) {
+				if(e.key.code == sf::Keyboard::K && P.size > 2) {
 					if(state == FREE || state == HOLD) {
 						state = NO_LINE;
 					} else if (state == FREE_LINE || state == HOLD_LINE) {
 						P_sliced = divide(P, find_intersections(P, L));
 						state = SLICED;
 					}
+				} else if(e.key.code == sf::Keyboard::S) {
+					printf("%s\n",
+						geom::has_self_intersections(P) ? "++++" : "----"
+					);
 				}
 				break;
 			}
@@ -59,6 +63,7 @@ void demo::poly_x_line_intersection() {
 			case sf::Event::MouseButtonReleased:
 				if(state == HOLD) {
 					state = FREE; 
+					//if(!P.size || mpos != P[-1]) P.add(mpos); 
 				} else if(state == HOLD_LINE) {
 					state = FREE_LINE;
 				}
