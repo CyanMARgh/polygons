@@ -12,6 +12,7 @@ struct circle {
 	vec2 f1 = {};
 	vec2 f2 = {};
 
+	static circle make(vec2 center, float R);
 	bool inside(vec2 p) const;
 	float rad() const;
 	vec2 center() const;

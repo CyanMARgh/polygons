@@ -5,6 +5,10 @@
 #include <SFML/Graphics.hpp>
 
 struct plotter {
+	enum style {
+		LINE,
+		SEGMENT
+	};
 	struct base {
 		sf::RenderWindow* rw;
 		box2 box;
@@ -18,6 +22,7 @@ struct plotter {
 		void draw(const poly& P);
 		void draw(const circle& C);
 		void draw(const surface& S);
+		void draw(line L, style s = LINE);
 	};
 	static std::unique_ptr<base> b;
 	static void init(sf::RenderWindow& rw);

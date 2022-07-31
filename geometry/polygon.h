@@ -63,6 +63,7 @@ namespace geom {
 	reindexed_cloud minimal_hull(const point_cloud&);
 	reindexed_cloud to_circular_sorted(const point_cloud&);
 	reindexed_cloud hull_by_circular(const reindexed_cloud&);
+	bool is_right_curved(const poly& P);
 
 	//			add minimal_hull_circular
 	reindexed_cloud minimal_hull(const reindexed_cloud&);
@@ -87,6 +88,84 @@ namespace geom {
 	//serialization
 	std::ofstream& operator<<(std::ofstream& fout, const poly& P);
 	std::ifstream& operator>>(std::ifstream& fin, poly& P);
+
+
+	//template with vaarg
+
+	// template<typename T>
+	// void save_to_file(const T& data, const std::string& filename) {
+	// 	std::ofstream fout(filename);
+	// 	fout << data;
+	// }
+	// template<typename T>
+	// void load_from_file(T& data, const std::string& filename) {
+	// 	std::ifstream fin(filename);
+	// 	fin >> data;
+	// }
+
+	//straight skeleton
+	// struct circle_list {
+	// 	struct node {
+	// 		u32 data;
+	// 		node* next = nullptr, *prev = nullptr;
+
+	// 		node(u32 data) : data(data) { }
+	// 	};
+	// 	static node* next(node* N) {
+	// 		return N ? N->next : nullptr;
+	// 	}
+	// 	static node* next(node* N) {
+	// 		return N ? N->next : nullptr;
+	// 	}
+	// 	static void connect(node* Np, node* Nn) {
+	// 		Np->next = Nn, Nn->prev = Np;
+	// 	}
+
+	// 	node* root = nullptr;
+	// 	circle_list operator=(const circle_list&) = delete;
+	// 	~circle_list() {
+	// 		if(!root) return;
+	// 		node R = root;
+	// 		do {
+	// 			R_ = R->next;
+	// 			delete R;
+	// 		} while(R_ != root);
+	// 	}
+	// 	void add(u32 val) {
+	// 		if(root) {
+	// 			node* N = new node(val);
+	// 			connect(root->prev, N);
+	// 			connect(N, root);
+	// 		} else {
+	// 			root = new node(val);
+	// 		}
+	// 	}
+	// 	void remove(node* N) {
+	// 		if(N == root) {
+	// 			if(root == root->next) {
+	// 				delete N;
+	// 				root = nullptr;
+	// 				return;
+	// 			}
+	// 			root = root->next;
+	// 		}
+	// 		connect(N->prev, N->next);
+	// 		delete N;
+	// 	}		
+	// };
+	//					collapse order
+
+	std::pair<float, vec2> bis_inter(line X, line Y, line Z);
+	struct skeleton : std::vector<u32> { };
+	skeleton make_skeleton_from_convex(const poly& P);
+	// 	//
+	// 	// vector< skeleton::node >
+
+	// 	struct event {
+	// 		float depth;
+	// 		node* 
+	// 	};
+	// }
 }
 
 

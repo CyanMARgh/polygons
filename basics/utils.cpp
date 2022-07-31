@@ -28,7 +28,11 @@ vec2 operator/(float a, vec2 b) { return {a / b.x, a / b.y}; }
 float dot(vec2 a, vec2 b) { return a.x * b.x + a.y * b.y; }
 float dot(vec3 a, vec3 b) { return a.x * b.x + a.y * b.y + a.z * b.z; }
 vec3 normalize(vec3 v, vec3 d, float eps) {
-	float l = sqrt(dot(v, v));
+	float l = len(v);
+	return l < eps ? d : v / l;
+}
+vec2 normalize(vec2 v, vec2 d, float eps) {
+	float l = len(v);
 	return l < eps ? d : v / l;
 }
 vec3 utof(vec3u v) { return vec3(v.x, v.y, v.z); }

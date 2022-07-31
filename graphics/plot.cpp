@@ -57,6 +57,19 @@ void plotter::base::draw(const poly& P) {
 	rw->draw(vlines, P.size + 1, sf::LineStrip);
 	delete[] vlines;
 }
+void plotter::base::draw(line L, style s) {
+	sf::Vertex vlines[2];
+
+	if(s == LINE) {
+		vec2 v = L.b - L.a;
+		L = {box * (L.a - v * 100.f), box * (L.b + v * 100.f)};
+	}
+
+	vlines[0] = L.a;
+	vlines[1] = L.b;
+
+	rw->draw(vlines, 2, sf::LineStrip);
+}
 void plotter::base::draw(const surface& S) {
 	vec2u size = S.size;
 	sf::Image img;

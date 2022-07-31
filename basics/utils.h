@@ -32,6 +32,7 @@ vec2 operator/(float a, vec2 B);
 float dot(vec2 a, vec2 b);
 float dot(vec3 a, vec3 b);
 vec3 normalize(vec3 v, vec3 d = vec3(1,0,0), float eps = 1e-9);
+vec2 normalize(vec2 v, vec2 d = vec2(1,0), float eps = 1e-9);
 vec3 utof(vec3u v);
 
 float len2(vec2 v);

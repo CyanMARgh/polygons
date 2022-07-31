@@ -9,6 +9,8 @@ int main() {
 	//demo::trees();
 	//demo::minimum_circle();
 	//demo::poly_x_line_intersection();
-	demo::surface_demo();
+	//demo::surface_demo();
+	//demo::median_demo();
+	demo::fourier();
 	return 0;
 }

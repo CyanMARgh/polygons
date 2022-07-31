@@ -4,6 +4,7 @@
 #include <set>
 #include "primitives.h"
 #include "utils.h"
+#include <queue>
 
 //base
 poly::poly() {
@@ -145,62 +146,145 @@ std::vector<poly> divide(const poly& P, const intersection_list& L) {
 }
 
 bool geom::has_self_intersections(const poly& P) {
-	for(u32 n = P.size, i = 0; i < n; i++) {
-		vec2 a = P[i], b = P[i + 1];
-		for(u32 j = i + 2; j < n - !i; j++) {
-			vec2 c = P[j], d = P[j + 1];
-			if(check_intersection(a, b, c, d) != cross_type::NONE) return true;
-		}
-	}
-	return false;
-
-	// u32 n = P.size;
-	// if(n < 4) return false;
-	// auto [ids, rids] = make_permutation<vec2>(P.points, [] (vec2 a, vec2 b ) { return a.y < b.y; });
-
-	// struct edge {
-	// 	u32 a, b;
-	// 	edge(u32 a, u32 b) : a(a), b(b) { }
-	// 	bool operator<(const edge& o) const { return a == o.a ? b < o.b : a < o.a; }
-	// };
-	// auto intersects = [&P](edge e1, edge e2) { 
-	// 	return e1.a != e2.b && e1.b != e2.a &&
-	// 		check_intersection(P[e1.a], P[e1.b], P[e2.a], P[e2.b]) != cross_type::NONE;
-	// };
-
-	// std::set<edge> es = {};
-
-	// for(u32 i = 0; i < n; i++) {
-	// 	u32 id = ids[i];
-	// 	u32 j0 = (id + n - 1) % n, j1 = (id + 1) % n; //nbs ids
-	// 	edge e0 = {j0, id}, e1 = {id, j1};
-	// 	bool c0 = i > rids[j0], c1 = i > rids[j1];
-	// 	if(c0) {
-	// 		es.erase(e0);
-	// 	} else {
-	// 		for(auto e : es) {
-	// 			if(intersects(e, e0)) {
-	// 				printf("{%d %d} x {%d %d}!\n", e.a, e.b, e0.a, e0.b);
-	// 				return true;
-	// 			}
-	// 		}
+	// for(u32 n = P.size, i = 0; i < n; i++) {
+	// 	vec2 a = P[i], b = P[i + 1];
+	// 	for(u32 j = i + 2; j < n - !i; j++) {
+	// 		vec2 c = P[j], d = P[j + 1];
+	// 		if(check_intersection(a, b, c, d) != cross_type::NONE) return true;
 	// 	}
-	// 	if(c1) {
-	// 		es.erase(e1); 
-	// 	} else {
-	// 		for(auto e : es) {
-	// 			if(intersects(e, e1)) {
-	// 				printf("{%d %d} x {%d %d}!\n", e.a, e.b, e1.a, e1.b);
-	// 				return true;
-	// 			}
-	// 		}
-	// 	}
-	// 	if(!c0) es.insert(e0);
-	// 	if(!c1) es.insert(e1);
 	// }
 	// return false;
+
+	u32 n = P.size;
+	if(n < 4) return false;
+	auto [ids, rids] = make_permutation<vec2>(P.points, [] (vec2 a, vec2 b ) { return a.y < b.y; });
+
+	struct edge {
+		u32 a, b;
+		edge(u32 a, u32 b) : a(a), b(b) { }
+		bool operator<(const edge& o) const { return a == o.a ? b < o.b : a < o.a; }
+	};
+	auto intersects = [&P](edge e1, edge e2) { 
+		return e1.a != e2.b && e1.b != e2.a &&
+			check_intersection(P[e1.a], P[e1.b], P[e2.a], P[e2.b]) != cross_type::NONE;
+	};
+
+	std::set<edge> es = {};
+
+	for(u32 i = 0; i < n; i++) {
+		u32 id = ids[i];
+		u32 j0 = (id + n - 1) % n, j1 = (id + 1) % n; //nbs ids
+		edge e0 = {j0, id}, e1 = {id, j1};
+		bool c0 = i > rids[j0], c1 = i > rids[j1];
+		if(c0) {
+			es.erase(e0);
+		} else {
+			for(auto e : es) {
+				if(intersects(e, e0)) {
+					printf("{%d %d} x {%d %d}!\n", e.a, e.b, e0.a, e0.b);
+					return true;
+				}
+			}
+		}
+		if(c1) {
+			es.erase(e1); 
+		} else {
+			for(auto e : es) {
+				if(intersects(e, e1)) {
+					printf("{%d %d} x {%d %d}!\n", e.a, e.b, e1.a, e1.b);
+					return true;
+				}
+			}
+		}
+		if(!c0) es.insert(e0);
+		if(!c1) es.insert(e1);
+	}
+	return false;
 }
 
 bool geom::is_valid(const poly& P) {
 	return area(P) > 0 && !has_self_intersections(P);
 }
+
+
+//skeleton
+bool geom::is_right_curved(const poly& P) {
+	for(s32 i = 0; i < P.size; i++) {
+		if(cross(P[i] - P[i - 1], P[i + 1] - P[i]) > 0) return false;
+	}
+	return true;
+}
+std::pair<float, vec2> geom::bis_inter(line X, line Y, line Z) {
+	vec2 a = X.a, b = X.b, c = Y.a, d = Y.b, e = Z.a, f = Z.b;
+	vec2 n1 = rrot(normalize(b - a)), n2 = rrot(normalize(d - c)), n3 = rrot(normalize(f - e));
+
+	mat2x2 M = mat2x2::from_rows(n1 - n2, n2 - n3);
+	vec2 V = {dot(a, n1) - dot(c, n2), dot(c, n2) - dot(e, n3)};
+
+	vec2 Q = M.inv() * V;
+	float h = dot(Q - a, n1);
+
+	return {h, Q};
+}
+geom::skeleton geom::make_skeleton_from_convex(const poly& P) {
+	u32 n = P.size;
+	struct node {
+		u32 id;
+		node *right, *left;
+		bool is_isolated() const {
+			return right == this;
+		}
+		static void isolate(node* N) {
+			node *A = N->left, *B = N->right;
+			A->right = B, B->left = A, N->right = N->left = N;
+		}
+	};
+	struct event {
+		node *A, *B, *C; 
+		float h;
+
+		bool operator<(const event& e2) const {
+			return h < e2.h;
+		}
+		bool is_valid() const {
+			return !(A->is_isolated() || B->is_isolated() || C->is_isolated());
+		}
+		bool is_final() const {
+			return C->right == A;
+		}
+	};
+	std::vector<node> nodes(n);
+	for(u32 i = 0; i < n; i++) {
+		nodes[i] = {i, &(nodes[(i + 1) % n]), &(nodes[(i + n - 1) % n])};
+	}
+	auto line_at = [&P] (u32 id) -> line {
+		return {P[id], P[id + 1]};
+	};
+	auto make_event = [&line_at] (node* B) -> event {
+		node *A = B->left, *C = B->right; 
+		float h = bis_inter(line_at(A->id), line_at(B->id), line_at(C->id)).first;
+		return {A, B, C, h};
+	};
+	std::priority_queue<event> events;
+	skeleton S;
+
+	for(u32 i = 0; i < n; i++) {
+		events.push(make_event(&(nodes[i])));
+	}
+
+	while(!events.empty()) {
+		event e = events.top();
+		events.pop();
+		if(!e.is_valid()) continue;
+		if(e.is_final()) {
+			printf("got final event\n");
+			break;
+		}
+		node::isolate(e.B);
+		events.push(make_event(e.A));
+		events.push(make_event(e.C));
+	}
+
+	return S;
+}
+
