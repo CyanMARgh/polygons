@@ -59,15 +59,13 @@ void plotter::base::draw(const poly& P) {
 }
 void plotter::base::draw(line L, style s) {
 	sf::Vertex vlines[2];
-
 	if(s == LINE) {
 		vec2 v = L.b - L.a;
-		L = {box * (L.a - v * 100.f), box * (L.b + v * 100.f)};
+		L = {(L.a - v * 100.f), (L.b + v * 100.f)};
 	}
-
+	L = {box * L.a, box * L.b};
 	vlines[0] = L.a;
 	vlines[1] = L.b;
-
 	rw->draw(vlines, 2, sf::LineStrip);
 }
 void plotter::base::draw(const surface& S) {

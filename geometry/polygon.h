@@ -3,6 +3,7 @@
 #include <fstream>
 #include <vector>
 #include "geometry.h"
+#include <map>
 
 struct intersection_list : std::vector<intersection> {};
 enum class seg_type {
@@ -13,7 +14,7 @@ struct poly {
 	std::vector<vec2> points;
 	u32 size = 0;
 
-	poly() ;
+	poly();
 	poly(std::vector<vec2> other);
 	poly& operator=(std::vector<vec2> other);
 	poly(const poly& P);
@@ -63,7 +64,7 @@ namespace geom {
 	reindexed_cloud minimal_hull(const point_cloud&);
 	reindexed_cloud to_circular_sorted(const point_cloud&);
 	reindexed_cloud hull_by_circular(const reindexed_cloud&);
-	bool is_right_curved(const poly& P);
+	bool is_right_convex(const poly& P);
 
 	//			add minimal_hull_circular
 	reindexed_cloud minimal_hull(const reindexed_cloud&);
@@ -89,83 +90,36 @@ namespace geom {
 	std::ofstream& operator<<(std::ofstream& fout, const poly& P);
 	std::ifstream& operator>>(std::ifstream& fin, poly& P);
 
-
-	//template with vaarg
-
-	// template<typename T>
-	// void save_to_file(const T& data, const std::string& filename) {
-	// 	std::ofstream fout(filename);
-	// 	fout << data;
-	// }
-	// template<typename T>
-	// void load_from_file(T& data, const std::string& filename) {
-	// 	std::ifstream fin(filename);
-	// 	fin >> data;
-	// }
-
-	//straight skeleton
-	// struct circle_list {
-	// 	struct node {
-	// 		u32 data;
-	// 		node* next = nullptr, *prev = nullptr;
-
-	// 		node(u32 data) : data(data) { }
-	// 	};
-	// 	static node* next(node* N) {
-	// 		return N ? N->next : nullptr;
-	// 	}
-	// 	static node* next(node* N) {
-	// 		return N ? N->next : nullptr;
-	// 	}
-	// 	static void connect(node* Np, node* Nn) {
-	// 		Np->next = Nn, Nn->prev = Np;
-	// 	}
-
-	// 	node* root = nullptr;
-	// 	circle_list operator=(const circle_list&) = delete;
-	// 	~circle_list() {
-	// 		if(!root) return;
-	// 		node R = root;
-	// 		do {
-	// 			R_ = R->next;
-	// 			delete R;
-	// 		} while(R_ != root);
-	// 	}
-	// 	void add(u32 val) {
-	// 		if(root) {
-	// 			node* N = new node(val);
-	// 			connect(root->prev, N);
-	// 			connect(N, root);
-	// 		} else {
-	// 			root = new node(val);
-	// 		}
-	// 	}
-	// 	void remove(node* N) {
-	// 		if(N == root) {
-	// 			if(root == root->next) {
-	// 				delete N;
-	// 				root = nullptr;
-	// 				return;
-	// 			}
-	// 			root = root->next;
-	// 		}
-	// 		connect(N->prev, N->next);
-	// 		delete N;
-	// 	}		
-	// };
-	//					collapse order
-
 	std::pair<float, vec2> bis_inter(line X, line Y, line Z);
-	struct skeleton : std::vector<u32> { };
-	skeleton make_skeleton_from_convex(const poly& P);
-	// 	//
-	// 	// vector< skeleton::node >
+	struct sk_event {
+		float h;
+		vec2 Q;
+		u32 edge_A, edge_B, edge_C;
+		u32 left_vert, right_vert, third_vert;
 
-	// 	struct event {
-	// 		float depth;
-	// 		node* 
-	// 	};
-	// }
+		enum type_t { EDGE, SPLIT, END } type;
+
+		bool operator<(const sk_event& e2) const;
+	};
+	struct sk_event_2 {
+		float h;
+		vec2 Q;
+		u32 iv_l, iv_r, iv_e;
+		enum type_t { EDGE, SPLIT, END } type = EDGE;
+
+		bool operator<(const sk_event_2& e2) const;
+	};
+
+	struct skeleton : std::vector<sk_event> { };
+	struct skeleton_2 {
+		std::vector<sk_event_2> events;
+		std::map<u32, u32> iv_to_iske;
+	};
+
+	skeleton make_skeleton_from_convex(const poly& P);
+	skeleton_2 make_skeleton_from_convex_2(const poly& P);
+	std::vector<poly> scale_with_sceleton(const poly& P, const skeleton_2& S, float h);
+	std::vector<poly> buffer(const poly& P, float h);
 }
 
 

@@ -10,4 +10,6 @@ namespace demo {
 	void surface_demo();
 	void median_demo();
 	void fourier();
+	void skeleton();
+	void rfoe();
 }

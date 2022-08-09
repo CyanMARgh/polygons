@@ -1,6 +1,12 @@
 #include "fourier.h"
 #include <cmath>
 
+u8 bit_flip(u8 x) {
+	x = (x & 0xF0) >> 4 | (x & 0x0F) << 4;
+	x = (x & 0xCC) >> 2 | (x & 0x33) << 2;
+	x = (x & 0xAA) >> 1 | (x & 0x55) << 1;
+	return x;
+}
 c16 one_cpow(float t) {
 	return {cosf(t), sinf(t)};
 }

@@ -1,0 +1,3 @@
+all -lsfml-window -lsfml-system -lsfml-graphics -lpthread -std=c++17 -lm -O3
+buffer.cpp -I /home/cyanmargh/boost_1_79_0
+result -I /home/cyanmargh/boost_1_79_0
