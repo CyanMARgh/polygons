@@ -72,7 +72,11 @@ void sliceable_group::end_slice() {
 	line L = {mouse_buf, mouse_curr};
 	if(len(L.a - L.b) < EPS) L.b = L.a + vec2(0., 1.);
 	poly& T = *top();
-	std::vector<poly> p_sliced = divide(T, geom::find_intersections(T, L));
+	//std::vector<poly> p_sliced = divide(T, geom::find_intersections(T, L));
+	//std::vector<poly> p_sliced = geom::divide(T, L.a, rrot(normalize(L.b - L.a)), 0.1f, 3);
+	std::vector<poly> p_sliced = geom::divide_evenly(T, L, 0.1f);
+
+
 	u32 s = order.size(), n = p_sliced.size();
 
 	mzs[order[s - 1]] = geom::divide_to_monotonics(p_sliced[0]);

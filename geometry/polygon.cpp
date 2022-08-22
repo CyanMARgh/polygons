@@ -124,7 +124,7 @@ std::vector<poly> divide(const poly& P, const intersection_list& L) {
 	auto next_l = [&] (u32 i) { return  ids[rids[i] ^ 1]; };
 
 	std::vector<poly> ans;
-	for(u32 pi = 0; pi < n; pi++){
+	for(u32 pi = 0; pi < n; pi++) {
 		if(used[pi]) continue;
 		poly P0;
 		for(u32 i = pi, j; !used[i]; ) {
@@ -143,6 +143,100 @@ std::vector<poly> divide(const poly& P, const intersection_list& L) {
 	}
 	return ans;
 }
+std::pair<std::vector<poly>, point_cloud> geom::divide(const poly& P, vec2 p0, vec2 n, float h, u32 N) {
+	u32 ps = P.size;
+	monotonic_zones mz = divide_to_monotonics(P, n);
+	struct intersection_2 {
+		u32 row, lid, cid;
+		float t1, t2; 
+		bool is_down;
+	};
+	std::vector<intersection_2> il = {};
+	auto inter_coord = [&P] (intersection_2 i) -> vec2 { return lerp(P[i.cid], P[i.cid + 1], i.t1); };
+	for(u32 row = 0; row < N; row++) {
+		for(u32 mzi = 0, mzs = mz.parts.size(); mzi < mzs; mzi++) {
+			auto z = mz.parts[mzi];
+			auto r = geom::inspect_zone(P, z, p0 - row * h * n, n);
+			if(r.id != -1) {
+				intersection_2 I = {row, -1u, (u32)r.id, r.t1, r.t2, z.type == seg_type::DOWN };
+				il.push_back(I);
+			}
+		}
+	}
+	if(!il.size()) return {{P}, {}};
+	u32 iln = il.size();
+	std::sort(il.begin(), il.end(), [] (intersection_2 a, intersection_2 b) { 
+		return a.row == b.row ? a.t2 <= b.t2 : a.row < b.row;
+	});
+		
+	auto [ids, rids] = make_permutation<intersection_2>(il, [] (intersection_2 a, intersection_2 b) { 
+		return a.cid == b.cid ? 
+		a.is_down ^ (a.row > b.row) :
+		a.cid < b.cid; 
+	});
+
+	point_cloud cloud = {};
+	for(auto i : il) { cloud.push_back(inter_coord(i)); }
+	//for(auto i : ids) { cloud.push_back(inter_coord(il[i])); }
+
+
+	auto next_c = [&ids, &rids, iln] (u32 i) -> u32 { return ids[(rids[i] + 1) % iln]; };
+	auto next_l = [] (u32 i) -> u32 { return i ^ 1; };
+
+	std::vector<bool> visited(iln, false);
+	std::vector<poly> result;
+
+	for(u32 i = 0; i < iln; i++) {
+		if(visited[i]) continue;
+		poly Pi;
+		for(u32 j = i, k; !visited[j]; ) {
+			k = next_c(j);
+			auto Is = il[j], Ie = il[k];
+			u32 id_s = Is.cid % ps, id_e = Ie.cid % ps;
+			Pi.add(inter_coord(Is));
+			for(auto l = id_s; l % ps != id_e; l++) { Pi.add(P[l + 1]); }
+			Pi.add(inter_coord(Ie));
+			visited[j] = true;
+			j = next_l(k);
+		}
+		result.push_back(Pi);
+	}
+	return {result, cloud};
+}
+std::vector<poly> geom::divide_evenly(const poly& P, line L, float h) {
+	float l = 1.e10f, r = -l, t = r, d = l;
+	vec2 nr = normalize(L.a - L.b);
+	vec2 n = lrot(nr);
+	for(auto p : P.points) {
+		float mx = dot(p, nr), my = dot(p, n);
+		if(mx > r) r = mx;
+		if(mx < l) l = mx;
+		if(my > t) t = my;
+		if(my < d) d = my;
+	}
+	s32 N = (t - d) / h + 2; if(N < 0) N = 0;
+	s32 N2 = (r - l) / h + 2; if(N2 < 0) N2 = 0;
+	//vec2 p0 = (l + r) * .5f * nr + ((t + d - N * h) * .5f - N * h) * n;
+	vec2 p0 = (l + r + N * h) * .5f * nr + ((t + d + N * h) * .5f) * n;
+
+	std::vector<poly> hor_sliced = divide(P, p0, n, h, N).first;
+	std::vector<std::vector<poly>> ver_sliced = {};
+	u32 S = 0;
+	for(auto &Pi : hor_sliced) {
+		auto vsi = divide(Pi, p0, nr, h, N2).first;
+		S += vsi.size();
+		ver_sliced.push_back(vsi);
+	}
+	std::vector<poly> result(S);
+	u32 Si = 0;
+	for(auto &Pi : ver_sliced) {
+		std::copy(Pi.begin(), Pi.end(), result.begin() + Si);
+		Si += Pi.size();
+	}
+
+	return result; 
+}
+
 
 bool geom::has_self_intersections(const poly& P) {
 	// for(u32 n = P.size, i = 0; i < n; i++) {
@@ -204,7 +298,6 @@ bool geom::has_self_intersections(const poly& P) {
 bool geom::is_valid(const poly& P) {
 	return area(P) > 0 && !has_self_intersections(P);
 }
-
 
 //skeleton
 bool geom::is_right_convex(const poly& P) {
@@ -662,8 +755,6 @@ geom::skeleton_2 geom::make_skeleton_from_convex_2(const poly& P) {
 	printf("(2)\n");
 	return {S, iv_to_iske};
 }
-
-
 std::vector<poly> geom::scale_with_sceleton(const poly& P, const skeleton_2& S, float h) {
 	u32 n = P.size;
 	struct vert {
@@ -765,6 +856,197 @@ std::vector<poly> geom::scale_with_sceleton(const poly& P, const skeleton_2& S, 
 			j = k;
 		} while (j != i);
 		result.push_back(Pi);
+	}
+	return result;
+}
+
+// delaunay triangulation & voronoi
+reindexed_cloud geom::to_sorted_vertical(const point_cloud& cloud) {
+	const point_cloud* t = &cloud;
+	u32 n = cloud.size();
+	reindexed_cloud rc(std::vector<u32>(n), t);
+	for(u32 i = 0; i < n; i++) rc[i] = i;
+	std::sort(rc.begin(), rc.end(), [t](u32 a, u32 b) { return t->at(a).y > t->at(b).y; });	
+	return rc;
+}
+
+geom::triangulation geom::make_delaunay_triangulation(const point_cloud& sites_unsorted) {
+	reindexed_cloud sites = to_sorted_vertical(sites_unsorted);
+	struct vert {
+		u32 right, left;
+	};
+	
+	std::map<std::pair<u32, u32>, std::pair<u32, u32>> quads = {};
+	std::vector<vert> hull = {};
+
+	auto print_hull = [&hull] () -> void {
+		u32 i = 0;
+		printf("[ ");
+		do {
+			printf("%u ", i);
+			u32 j = hull[i].right;
+			if(i == j) throw std::runtime_error("");
+			i = j;
+		} while (i);
+		printf("]\n");
+	};
+	auto is_valid_quad = [](vec2 A, vec2 B, vec2 C, vec2 D) -> bool {
+		// vec2 v1 = A - B, w1 = C - B, v2 = A - D, w2 = C - D;
+		// return dot(v1, w1) * len(v2) * len(w2) > dot(v2, w2) * len(v1) * len(w1);
+		vec2 v1 = normalize(A - B), w1 = normalize(C - B), v2 = normalize(A - D), w2 = normalize(C - D);
+		float a1 = acos(dot(v1, w1)), a2 = M_PI - acos(dot(v2, w2));
+		return a1 < a2;
+	}; 
+	auto is_valid_quad_i = [&is_valid_quad, &sites](u32 a, u32 b, u32 c, u32 d) -> bool {
+		return is_valid_quad(sites.satat(a), sites.satat(b), sites.satat(c), sites.satat(d));
+	}; 
+	auto sort = [] (u32 x, u32 y) -> std::pair<u32, u32> { 
+		if(x < y) {
+			return {x, y};
+		} else {
+			return {y, x};
+		}
+	};
+	auto flip_edge = [&quads, &sort] (u32 a, u32 b, u32 u, u32 d) {
+		printf("flip: a = %d, b = %d, d = %d, u = %d\n", a, b, d, u);
+		auto update = [&quads, sort] (u32 x, u32 y, u32 iold, u32 inew) {
+			printf("update: [%d, %d]: %d -> %d\n", x, y, iold, inew);
+			auto xy = sort(x, y);
+			auto& ud = quads[xy];
+			printf("ud: %d, %d\n", ud.first, ud.second);
+			if(ud.first == iold) {
+				ud.first = inew;
+			} else if (ud.second == iold) {
+				ud.second = inew;
+			} else {
+				throw std::runtime_error("");
+			}
+		};
+		auto ab = sort(a, b);
+//		printf("(6:0)\n");
+		update(a, u, b, d);
+//		printf("(6:1)\n");
+		update(a, d, b, u);
+//		printf("(6:2)\n");
+		update(d, b, a, u);
+//		printf("(6:3)\n");
+		update(b, u, a, d);
+//		printf("(6:4)\n");
+		quads.erase(ab);
+		quads[sort(u, d)] = ab;
+	};
+	std::function<void(u32, u32, u32)> collapse;
+	collapse = [&quads, &is_valid_quad_i, &sort, &collapse, &flip_edge] (u32 a, u32 b, u32 d) -> void {
+		printf("collapse: a = %d, b = %d, d = %d\n", a, b, d);
+		auto get_second = [] (std::pair<u32, u32> xy, u32 x) -> u32 {
+			return xy.first == x ? xy.second : xy.first;
+		};
+		u32 u = get_second(quads[sort(a, b)], d);
+		if(u == -1u) return;
+		printf("\t\tu = %d\n", u);
+		if(!is_valid_quad_i(a, u, b, d)) {
+			printf("(4)\n");
+			flip_edge(a, b, u, d);
+			printf("(5)\n");
+			collapse(a, u, d);
+			printf("(6)\n");
+			collapse(u, b, d);
+			printf("(7)\n");
+		} else {
+			printf("recursion stop\n");
+		}
+		printf("(3)\n");
+	};
+	auto insert_site = [&print_hull, &collapse, &sort, &sites, &hull, &quads] (u32 k) {
+		auto link_triangle = [&quads, &sort] (u32 i, u32 j, u32 k) -> void {
+			auto link_partial = [&quads, &sort] (u32 i, u32 j, u32 k) -> void {
+				auto ij = sort(i, j);
+				auto F = quads.find(ij);
+				if(F == quads.end()) {
+					quads[ij] = {k, -1u};
+				} else if(auto& ab = F->second; ab.first == -1) {
+					ab.first = k;
+				} else if(ab.second == -1) {
+					ab.second = k;
+				} else {
+					throw std::runtime_error("");
+				}
+			};
+			link_partial(i, j, k);
+			link_partial(j, k, i);
+			link_partial(k, i, j);
+		};
+		print_hull();
+		printf("inserting:\n");
+		u32 i = k - 1;
+		vec2 Q = sites.satat(k), A = sites.satat(i);
+		printf("i = %d, k = %d.  Q = (%f, %f), A = (%f, %f)\n", i, k, Q.x, Q.y, A.x, A.y);
+		while(i != 0) {
+			u32 j = hull[i].right;
+			printf("<%d-%d>\n", i, j);
+			vec2 B = sites.satat(j);
+			if(cross(B - A, A - Q) > 0) {
+				printf("(0): %d %d\n", i, j);
+				hull[i].right = hull[j].left = -1u;
+				link_triangle(i, j, k);
+				collapse(i, j, k);
+			} else {
+				break;
+			}
+			i = j, A = B;
+		}
+		u32 ir = i;
+		// printf("i right = %d\n", i);
+		// hull.push_back({i, -1u});
+		// hull[i].left = k;
+		i = k - 1;
+		Q = sites.satat(k), A = sites.satat(i);
+		printf("i = %d, k = %d.  Q = (%f, %f), A = (%f, %f)\n", i, k, Q.x, Q.y, A.x, A.y);
+		while(i != 0) {
+			u32 j = hull[i].left;
+			printf("<%d-%d>\n", i, j);
+			vec2 B = sites.satat(j);
+			if(cross(B - A, A - Q) < 0) {				
+				printf("(1): %d %d\n", i, j);
+				hull[i].left = hull[j].right = -1u;
+				link_triangle(i, j, k);
+				collapse(j, i, k);
+			} else {
+				break;
+			}
+			i = j, A = B;
+		}
+		u32 il = i;
+		printf("IL = %d, IR = %d\n", il, ir);
+		hull.push_back({ir, il});
+		hull[il].right = hull[ir].left = k;
+		// printf("i left = %d\n", i);
+		// hull[k].left = i;
+		// hull[i].right = k;
+	};
+	auto init_triangle = [&quads, &sites, &hull] () {
+		quads[{0, 1}] = {2, -1u};
+		quads[{0, 2}] = {1, -1u};
+		quads[{1, 2}] = {0, -1u};
+		vec2 A = sites.satat(0), B = sites.satat(1), C = sites.satat(2);
+		if(cross(B - A, C - A) < 0) {
+			hull.push_back({2, 1});
+			hull.push_back({0, 2});
+			hull.push_back({1, 0});
+		} else {
+			hull.push_back({1, 2});
+			hull.push_back({2, 0});
+			hull.push_back({0, 1});
+		}
+	};
+	init_triangle();
+	for(u32 k = 3, n = sites.size(); k < n; k++) {
+		printf("(2): %d\n", k);
+		insert_site(k);
+	}
+	triangulation result = {{}, &sites_unsorted};
+	for(auto [k, v] : quads) {
+		result.lines.push_back({sites.at(k.first), sites.at(k.second)});
 	}
 	return result;
 }

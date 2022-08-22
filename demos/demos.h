@@ -12,4 +12,5 @@ namespace demo {
 	void fourier();
 	void skeleton();
 	void rfoe();
+	void voronoi();
 }

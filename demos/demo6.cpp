@@ -4,6 +4,8 @@
 #include "primitives.h"
 #include "surface.h"
 #include "sliceable_group.h"
+#include "utils.h"
+#include <cmath>
 
 void demo::median_demo() {
 	bool pressed = false;
@@ -27,6 +29,12 @@ void demo::median_demo() {
 		point.setPosition(wintr * p);
 		window.draw(point);
 	};
+	auto is_valid_quad = [](vec2 A, vec2 B, vec2 C, vec2 D) -> bool {
+		vec2 v1 = normalize(A - B), w1 = normalize(C - B), v2 = normalize(A - D), w2 = normalize(C - D);
+		float a1 = acos(dot(v1, w1)), a2 = M_PI - acos(dot(v2, w2));
+		return a1 < a2;
+	}; 
+
 
 	// draw lines on distance h
 
@@ -65,17 +73,22 @@ void demo::median_demo() {
 				case 4: E = mpos; break;
 				case 5: F = mpos; break;
 			}
-			auto [_h, _Q] = geom::bis_inter({A, B}, {C, D}, {E, F});
-			Q = _Q, h = _h;
+			Q = circumcenter(A, B, C);
+			h = len(Q - A);
+			//auto [_h, _Q] = geom::bis_inter({A, B}, {B, C}, {C, A});
+			//Q = _Q, h = _h;
 			//printf("%f %f\n", Q.x, Q.y);
+
 		}
 
 		window.clear();
 		plt->draw(A), plt->draw(B), plt->draw(C), plt->draw(D);
 		plt->draw(E), plt->draw(F);
-		plt->draw({A, B}, plotter::LINE);
-		plt->draw({C, D}, plotter::LINE);
-		plt->draw({E, F}, plotter::LINE);
+		plt->draw({A, B}, plotter::SEGMENT);
+		plt->draw({B, C}, plotter::SEGMENT);
+		plt->draw({C, D}, plotter::SEGMENT);
+		plt->draw({D, A}, plotter::SEGMENT);
+		printf("%c\n", is_valid_quad(A, B, C, D) ? '+' : '-');
 		plt->draw(circle::make(Q, h));
 		window.display();
 	}

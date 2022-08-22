@@ -8,11 +8,12 @@ int main() {
 	// demo::convex_hull_tests();
 	//demo::trees();
 	// demo::minimum_circle();
-	// demo::poly_x_line_intersection();
-	// demo::surface_demo();
+	//demo::poly_x_line_intersection();
+	//demo::surface_demo();
 	// demo::median_demo();
 	//demo::fourier();
-	demo::skeleton();
+	//demo::skeleton();
 	//demo::rfoe();
+	demo::voronoi();
 	return 0;
 }

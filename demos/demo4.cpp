@@ -2,6 +2,7 @@
 #include "polygon.h"
 #include "plot.h"
 #include "primitives.h"
+#include "utils.h"
 
 void demo::poly_x_line_intersection() {
 	using namespace geom;
@@ -40,14 +41,15 @@ void demo::poly_x_line_intersection() {
 				if(e.key.code == sf::Keyboard::K && P.size > 2) {
 					if(state == FREE || state == HOLD) {
 						state = NO_LINE;
-					} else if (state == FREE_LINE || state == HOLD_LINE) {
-						P_sliced = divide(P, find_intersections(P, L));
+					} 
+				} else if(e.key.code == sf::Keyboard::S) {
+					if (state == FREE_LINE || state == HOLD_LINE) {
+						auto __ = geom::divide(P, L.a, rrot(normalize(L.b - L.a)), 0.1f, 3);
+						P_sliced = __.first;
+						cloud = __.second;
+						// P_sliced = divide(P, find_intersections(P, L));
 						state = SLICED;
 					}
-				} else if(e.key.code == sf::Keyboard::S) {
-					printf("%s\n",
-						geom::has_self_intersections(P) ? "++++" : "----"
-					);
 				}
 				break;
 			}
@@ -63,7 +65,7 @@ void demo::poly_x_line_intersection() {
 			case sf::Event::MouseButtonReleased:
 				if(state == HOLD) {
 					state = FREE; 
-					//if(!P.size || mpos != P[-1]) P.add(mpos); 
+					if(!P.size || mpos != P[-1]) P.add(mpos); 
 				} else if(state == HOLD_LINE) {
 					state = FREE_LINE;
 				}
@@ -73,7 +75,7 @@ void demo::poly_x_line_intersection() {
 		window.clear();
 		switch(state) {
 			case HOLD: {
-				if(!P.size || mpos != P[-1]) P.add(mpos); 
+				//if(!P.size || mpos != P[-1]) P.add(mpos); 
 				break;
 			}
 			case HOLD_LINE: {
@@ -82,16 +84,17 @@ void demo::poly_x_line_intersection() {
 				break; 
 			}
 		}
-		u32 f_id = ((u32)(s32)(clock.getElapsedTime().asSeconds() * 10));
+		u32 f_id = ((u32)(s32)(clock.getElapsedTime().asSeconds() * 1));
 
 		if(state == SLICED) {
+			//printf("here\n");
 			if(u32 s = P_sliced.size()) {
 				plt->draw(P_sliced[f_id % s]);
 			}
 		} else {
 			plt->draw(P);
-			if(u32 s = cloud.size()) plt->draw(cloud[f_id % s]);
 		}
+		if(u32 s = cloud.size()) plt->draw(cloud[f_id % s]);
 		window.display();
 	}
 }

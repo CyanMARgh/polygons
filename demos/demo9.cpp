@@ -4,26 +4,27 @@
 #include "primitives.h"
 #include "surface.h"
 #include "sliceable_group.h"
+#include "utils.h"
 
-void demo::surface_demo() {
+void demo::voronoi() {
 	bool pressed = false;
 	using namespace geom;
 
-	float point_rad = 3, win_size = 800;
+	float win_size = 800;
 	box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();
+
+	sf::Clock clock;
+	auto get_frame = [&clock] (u32 n) {
+		return ((u32)(s32)(clock.getElapsedTime().asSeconds() * 2.f)) % (n + 1);
+	};
 
 	sf::RenderWindow window(sf::VideoMode(win_size, win_size), "polygons");
 	plotter plt(window);
-
-	surface S({800, 800}, {1, 1});
-	sliceable_group SG;
-
-	poly P = {};
-	u32 I = 0;
+	point_cloud cloud = {};
+	triangulation t = {};
 
 	while(window.isOpen()) {
 		vec2 mpos = inv * (vec2)sf::Mouse::getPosition(window);
-
 		for(sf::Event e; window.pollEvent(e);) {
 			switch(e.type) {
 				case sf::Event::Closed: {
@@ -36,31 +37,20 @@ void demo::surface_demo() {
 				}
 				case sf::Event::MouseButtonReleased: {
 					pressed = false;
+					cloud.push_back(mpos);
 					break;
 				}
 				case sf::Event::KeyPressed: {
-					if(e.key.code == sf::Keyboard::D) {
-						//printf("->D\n");
-						SG.update(pressed, sliceable_group::DRAW, mpos);
-					} else if(e.key.code == sf::Keyboard::M) {
-						//printf("->M\n");
-						SG.update(pressed, sliceable_group::MOVE, mpos);
-					} else if(e.key.code == sf::Keyboard::K) {
-						SG.update(pressed, sliceable_group::SLICE, mpos);						
-					}
+					if(e.key.code == sf::Keyboard::Enter) {
+						t = geom::make_delaunay_triangulation(cloud);
+					} 
 				}
 			}
 		}
-
-		//if(I++ % 300 == 0)
-		SG.update(pressed, sliceable_group::NONE, mpos);
-
-		S.clear();
-		S.draw(SG);
-		//printf("polys count: %d\n", SG.polys.size());
-
 		window.clear();
-		plt->draw(S);
+
+		plt->draw(cloud);
+		plt->draw(t);
 		window.display();
 	}
 }

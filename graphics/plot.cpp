@@ -84,3 +84,9 @@ void plotter::base::draw(const surface& S) {
 	any_spr.setScale((vec2)rw->getSize() / (vec2)S.size);
 	rw->draw(any_spr);
 }
+void plotter::base::draw(const geom::triangulation& T) {
+	for(auto t : T.lines) {
+		vec2 A = T.source->at(t.a), B = T.source->at(t.b);
+		draw({A, B}, style::SEGMENT);
+	}
+}

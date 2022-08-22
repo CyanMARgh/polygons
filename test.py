@@ -100,6 +100,14 @@ def is_app_fresh(sources, files_dict):
 		return False
 	target_mtime = os.path.getmtime("./build/app")
 
+	walker = next(os.walk("./"))
+	files = walker[2]
+
+	if "FLAGS" in files:
+		if os.path.getmtime("./FLAGS") > target_mtime: return False
+	# else:
+	# 	raise NameError("no FLAGS file")
+
 	for s in sources:
 		if os.path.getmtime("./tmp/" + s[1]) > target_mtime: return False
 	return True
@@ -118,25 +126,27 @@ def full_compile():
 # -> (default_flags, map<source, flags>)
 def get_all_flags(files_dict, opt_file_name = 'FLAGS'):
 	path = files_dict[opt_file_name]
-	F = open(path + opt_file_name, 'r')
+	try:	
+		F = open(path + opt_file_name, 'r')
+		def_flags = ""
+		extra_flags = dict()
 
-	def_flags = ""
-	extra_flags = dict()
-
-	for line in F:
-		flags = line.split()
-		w0 = flags[0]
-		if len(w0) == 0: continue
-		flags = ' '.join(flags[1:]) + ' '
-		if w0 == 'result':
-			extra_flags['result'] = extra_flags.get('result', '') + flags
-		elif w0 == 'all':
-			def_flags += flags
-		elif w0 in files_dict:
-			extra_flags[w0] = extra_flags.get(w0, '') + flags
-		else:
-			raise NameError("invalid target: " + w0)
-	return (def_flags, extra_flags)
+		for line in F:
+			flags = line.split()
+			w0 = flags[0]
+			if len(w0) == 0: continue
+			flags = ' '.join(flags[1:]) + ' '
+			if w0 == 'result':
+				extra_flags['result'] = extra_flags.get('result', '') + flags
+			elif w0 == 'all':
+				def_flags += flags
+			elif w0 in files_dict:
+				extra_flags[w0] = extra_flags.get(w0, '') + flags
+			else:
+				raise NameError("invalid target: " + w0)
+		return (def_flags, extra_flags)
+	except:
+		return ("-lsfml-window -lsfml-system -lsfml-graphics -lpthread -std=c++17 -lm -O3", dict())
 
 def get_flags(flags, target):
 	return flags[0] + flags[1].get(target, '')

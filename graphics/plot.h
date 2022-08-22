@@ -3,6 +3,7 @@
 #include "primitives.h"
 #include <memory>
 #include <SFML/Graphics.hpp>
+#include "polygon.h"
 
 struct plotter {
 	enum style {
@@ -23,6 +24,7 @@ struct plotter {
 		void draw(const circle& C);
 		void draw(const surface& S);
 		void draw(line L, style s = LINE);
+		void draw(const geom::triangulation& T);
 	};
 	static std::unique_ptr<base> b;
 	static void init(sf::RenderWindow& rw);
