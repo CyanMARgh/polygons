@@ -22,6 +22,7 @@ struct mat2x2;
 
 //complex structures
 struct poly;
+struct spatial_graph;
 //struct poly_group;
 struct point_cloud;
 struct monotonic_zones;
@@ -32,4 +33,7 @@ enum class seg_type;
 
 struct surface;
 struct sliceable_group;
+struct spatial_graph;
+struct triangulation;
+struct id_line;
 //struct graph;

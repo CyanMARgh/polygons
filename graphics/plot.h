@@ -24,7 +24,8 @@ struct plotter {
 		void draw(const circle& C);
 		void draw(const surface& S);
 		void draw(line L, style s = LINE);
-		void draw(const geom::triangulation& T);
+		void draw(const triangulation& T);
+		void draw(const spatial_graph& T);
 	};
 	static std::unique_ptr<base> b;
 	static void init(sf::RenderWindow& rw);

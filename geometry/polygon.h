@@ -22,6 +22,7 @@ struct poly {
 	void add(vec2 p) ;
 	vec2& operator[](s32 i);
 	vec2 operator[](s32 i) const;
+	box2 bounding_box() const;
 };
 struct monotonic_zones {
 	struct zone {
@@ -45,8 +46,13 @@ struct reindexed_cloud : std::vector<u32> {
 point_cloud to_cloud(const poly& P, const intersection_list& L);
 std::vector<poly> divide(const poly& P, const intersection_list& L);
 
+struct id_line {
+	u32 a, b;
+	bool operator<(id_line l2) const;
+	bool operator==(id_line l2) const;
+	bool operator!=(id_line l2) const;
+};
 namespace geom {
-//	std::vector<poly>
 	//mass
 	float area(const poly& P);
 	vec2 area_X_center(const poly& P);
@@ -61,21 +67,7 @@ namespace geom {
 	s32 is_inside_val(const poly& P, const monotonic_zones& mz, vec2 p, vec2 n = {0, 1});
 	std::pair<std::vector<poly>, point_cloud> divide(const poly& P, vec2 p0, vec2 n, float h, u32 N);
 	std::vector<poly> divide_evenly(const poly& P, line L, float h);
-
-	//hull
-	//TODO REMAKE TO ONE METHOD WITH LAMBDA
-	reindexed_cloud to_sorted(const point_cloud&);
-	reindexed_cloud to_sorted_vertical(const point_cloud&);
-	reindexed_cloud minimal_hull(const point_cloud&);
-	reindexed_cloud to_circular_sorted(const point_cloud&);
-	reindexed_cloud hull_by_circular(const reindexed_cloud&);
-	bool is_right_convex(const poly& P);
-
-	//			add minimal_hull_circular
-	reindexed_cloud minimal_hull(const reindexed_cloud&);
-	std::pair<bool, poly> verify_minimal_hull(const reindexed_cloud& cloud);
-	std::tuple<bool, point_cloud, poly> minimal_hull_test(u32 N);
-
+	
 	//welzl
 	circle welzl_2(vec2 a, vec2 b);
 	circle welzl_3(vec2 a, vec2 b, vec2 c);
@@ -121,17 +113,11 @@ namespace geom {
 		std::map<u32, u32> iv_to_iske;
 	};
 
+	reindexed_cloud to_sorted_vertical(const point_cloud&);
 	skeleton make_skeleton_from_convex(const poly& P);
 	skeleton_2 make_skeleton_from_convex_2(const poly& P);
 	std::vector<poly> scale_with_sceleton(const poly& P, const skeleton_2& S, float h);
 	std::vector<poly> buffer(const poly& P, float h);
-
-	struct id_line { u32 a, b; };
-	struct triangulation {
-		std::vector<id_line> lines; 
-		const point_cloud* source;
-	};
-	triangulation make_delaunay_triangulation(const point_cloud& sites_unsorted);
 }
 
 

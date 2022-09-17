@@ -32,6 +32,16 @@ vec2& poly::operator[](s32 i) {
 vec2 poly::operator[](s32 i) const {
 	return points[mmod(i, points.size())];
 }
+box2 poly::bounding_box() const {
+	vec2 mi = {1.e10f, 1.e10f}, ma = {-1.e10f, -1.e10f};
+	for(auto p : points) {
+		if(mi.x > p.x) mi.x = p.x;
+		if(mi.y > p.y) mi.y = p.y;
+		if(ma.x < p.x) ma.x = p.x;
+		if(ma.y < p.y) ma.y = p.y;
+	}
+	return box2(ma - mi, mi);
+}
 
 // is inside
 intersection geom::inspect_zone( const poly& P, monotonic_zones::zone z, vec2 p, vec2 n) {
@@ -300,16 +310,6 @@ bool geom::is_valid(const poly& P) {
 }
 
 //skeleton
-bool geom::is_right_convex(const poly& P) {
-	if(P.size < 3) return false;
-	for(s32 i = 0; i < P.size; i++) {
-		if(cross(P[i] - P[i - 1], P[i + 1] - P[i]) > 0) return false;
-	}
-	for(s32 i = 1; i < P.size; i++) {
-		if(cross(P[i] - P[i - 1], P[0] - P[i]) > 0) return false;
-	}
-	return true;
-}
 std::pair<float, vec2> geom::bis_inter(line X, line Y, line Z) {
 	vec2 a = X.a, b = X.b, c = Y.a, d = Y.b, e = Z.a, f = Z.b;
 	vec2 n1 = rrot(normalize(b - a)), n2 = rrot(normalize(d - c)), n3 = rrot(normalize(f - e));
@@ -866,187 +866,18 @@ reindexed_cloud geom::to_sorted_vertical(const point_cloud& cloud) {
 	u32 n = cloud.size();
 	reindexed_cloud rc(std::vector<u32>(n), t);
 	for(u32 i = 0; i < n; i++) rc[i] = i;
-	std::sort(rc.begin(), rc.end(), [t](u32 a, u32 b) { return t->at(a).y > t->at(b).y; });	
+	std::sort(rc.begin(), rc.end(), [t](u32 a, u32 b) { 
+		vec2 pa = t->at(a), pb = t->at(b);
+		return pa.y == pb.y ? pa.x > pb.x : pa.y > pb.y; 
+	});	
 	return rc;
 }
-
-geom::triangulation geom::make_delaunay_triangulation(const point_cloud& sites_unsorted) {
-	reindexed_cloud sites = to_sorted_vertical(sites_unsorted);
-	struct vert {
-		u32 right, left;
-	};
-	
-	std::map<std::pair<u32, u32>, std::pair<u32, u32>> quads = {};
-	std::vector<vert> hull = {};
-
-	auto print_hull = [&hull] () -> void {
-		u32 i = 0;
-		printf("[ ");
-		do {
-			printf("%u ", i);
-			u32 j = hull[i].right;
-			if(i == j) throw std::runtime_error("");
-			i = j;
-		} while (i);
-		printf("]\n");
-	};
-	auto is_valid_quad = [](vec2 A, vec2 B, vec2 C, vec2 D) -> bool {
-		// vec2 v1 = A - B, w1 = C - B, v2 = A - D, w2 = C - D;
-		// return dot(v1, w1) * len(v2) * len(w2) > dot(v2, w2) * len(v1) * len(w1);
-		vec2 v1 = normalize(A - B), w1 = normalize(C - B), v2 = normalize(A - D), w2 = normalize(C - D);
-		float a1 = acos(dot(v1, w1)), a2 = M_PI - acos(dot(v2, w2));
-		return a1 < a2;
-	}; 
-	auto is_valid_quad_i = [&is_valid_quad, &sites](u32 a, u32 b, u32 c, u32 d) -> bool {
-		return is_valid_quad(sites.satat(a), sites.satat(b), sites.satat(c), sites.satat(d));
-	}; 
-	auto sort = [] (u32 x, u32 y) -> std::pair<u32, u32> { 
-		if(x < y) {
-			return {x, y};
-		} else {
-			return {y, x};
-		}
-	};
-	auto flip_edge = [&quads, &sort] (u32 a, u32 b, u32 u, u32 d) {
-		printf("flip: a = %d, b = %d, d = %d, u = %d\n", a, b, d, u);
-		auto update = [&quads, sort] (u32 x, u32 y, u32 iold, u32 inew) {
-			printf("update: [%d, %d]: %d -> %d\n", x, y, iold, inew);
-			auto xy = sort(x, y);
-			auto& ud = quads[xy];
-			printf("ud: %d, %d\n", ud.first, ud.second);
-			if(ud.first == iold) {
-				ud.first = inew;
-			} else if (ud.second == iold) {
-				ud.second = inew;
-			} else {
-				throw std::runtime_error("");
-			}
-		};
-		auto ab = sort(a, b);
-//		printf("(6:0)\n");
-		update(a, u, b, d);
-//		printf("(6:1)\n");
-		update(a, d, b, u);
-//		printf("(6:2)\n");
-		update(d, b, a, u);
-//		printf("(6:3)\n");
-		update(b, u, a, d);
-//		printf("(6:4)\n");
-		quads.erase(ab);
-		quads[sort(u, d)] = ab;
-	};
-	std::function<void(u32, u32, u32)> collapse;
-	collapse = [&quads, &is_valid_quad_i, &sort, &collapse, &flip_edge] (u32 a, u32 b, u32 d) -> void {
-		printf("collapse: a = %d, b = %d, d = %d\n", a, b, d);
-		auto get_second = [] (std::pair<u32, u32> xy, u32 x) -> u32 {
-			return xy.first == x ? xy.second : xy.first;
-		};
-		u32 u = get_second(quads[sort(a, b)], d);
-		if(u == -1u) return;
-		printf("\t\tu = %d\n", u);
-		if(!is_valid_quad_i(a, u, b, d)) {
-			printf("(4)\n");
-			flip_edge(a, b, u, d);
-			printf("(5)\n");
-			collapse(a, u, d);
-			printf("(6)\n");
-			collapse(u, b, d);
-			printf("(7)\n");
-		} else {
-			printf("recursion stop\n");
-		}
-		printf("(3)\n");
-	};
-	auto insert_site = [&print_hull, &collapse, &sort, &sites, &hull, &quads] (u32 k) {
-		auto link_triangle = [&quads, &sort] (u32 i, u32 j, u32 k) -> void {
-			auto link_partial = [&quads, &sort] (u32 i, u32 j, u32 k) -> void {
-				auto ij = sort(i, j);
-				auto F = quads.find(ij);
-				if(F == quads.end()) {
-					quads[ij] = {k, -1u};
-				} else if(auto& ab = F->second; ab.first == -1) {
-					ab.first = k;
-				} else if(ab.second == -1) {
-					ab.second = k;
-				} else {
-					throw std::runtime_error("");
-				}
-			};
-			link_partial(i, j, k);
-			link_partial(j, k, i);
-			link_partial(k, i, j);
-		};
-		print_hull();
-		printf("inserting:\n");
-		u32 i = k - 1;
-		vec2 Q = sites.satat(k), A = sites.satat(i);
-		printf("i = %d, k = %d.  Q = (%f, %f), A = (%f, %f)\n", i, k, Q.x, Q.y, A.x, A.y);
-		while(i != 0) {
-			u32 j = hull[i].right;
-			printf("<%d-%d>\n", i, j);
-			vec2 B = sites.satat(j);
-			if(cross(B - A, A - Q) > 0) {
-				printf("(0): %d %d\n", i, j);
-				hull[i].right = hull[j].left = -1u;
-				link_triangle(i, j, k);
-				collapse(i, j, k);
-			} else {
-				break;
-			}
-			i = j, A = B;
-		}
-		u32 ir = i;
-		// printf("i right = %d\n", i);
-		// hull.push_back({i, -1u});
-		// hull[i].left = k;
-		i = k - 1;
-		Q = sites.satat(k), A = sites.satat(i);
-		printf("i = %d, k = %d.  Q = (%f, %f), A = (%f, %f)\n", i, k, Q.x, Q.y, A.x, A.y);
-		while(i != 0) {
-			u32 j = hull[i].left;
-			printf("<%d-%d>\n", i, j);
-			vec2 B = sites.satat(j);
-			if(cross(B - A, A - Q) < 0) {				
-				printf("(1): %d %d\n", i, j);
-				hull[i].left = hull[j].right = -1u;
-				link_triangle(i, j, k);
-				collapse(j, i, k);
-			} else {
-				break;
-			}
-			i = j, A = B;
-		}
-		u32 il = i;
-		printf("IL = %d, IR = %d\n", il, ir);
-		hull.push_back({ir, il});
-		hull[il].right = hull[ir].left = k;
-		// printf("i left = %d\n", i);
-		// hull[k].left = i;
-		// hull[i].right = k;
-	};
-	auto init_triangle = [&quads, &sites, &hull] () {
-		quads[{0, 1}] = {2, -1u};
-		quads[{0, 2}] = {1, -1u};
-		quads[{1, 2}] = {0, -1u};
-		vec2 A = sites.satat(0), B = sites.satat(1), C = sites.satat(2);
-		if(cross(B - A, C - A) < 0) {
-			hull.push_back({2, 1});
-			hull.push_back({0, 2});
-			hull.push_back({1, 0});
-		} else {
-			hull.push_back({1, 2});
-			hull.push_back({2, 0});
-			hull.push_back({0, 1});
-		}
-	};
-	init_triangle();
-	for(u32 k = 3, n = sites.size(); k < n; k++) {
-		printf("(2): %d\n", k);
-		insert_site(k);
-	}
-	triangulation result = {{}, &sites_unsorted};
-	for(auto [k, v] : quads) {
-		result.lines.push_back({sites.at(k.first), sites.at(k.second)});
-	}
-	return result;
+bool id_line::operator<(id_line l2) const {
+	return a == l2.a ? b < l2.b : a < l2.a;
+}
+bool id_line::operator==(id_line l2) const {
+	return a == l2.a && b == l2.b;
+}
+bool id_line::operator!=(id_line l2) const {
+	return a != l2.a || b != l2.b;
 }

@@ -1,3 +1,4 @@
+#include "hull.h"
 #include "polygon.h"
 #include "primitives.h"
 #include "utils.h"
@@ -151,6 +152,17 @@ reindexed_cloud geom::hull_by_circular(const reindexed_cloud& cloud) {
 	}
 	return ans;
 }
+bool geom::is_right_convex(const poly& P) {
+	if(P.size < 3) return false;
+	for(s32 i = 0; i < P.size; i++) {
+		if(cross(P[i] - P[i - 1], P[i + 1] - P[i]) > 0) return false;
+	}
+	for(s32 i = 1; i < P.size; i++) {
+		if(cross(P[i] - P[i - 1], P[0] - P[i]) > 0) return false;
+	}
+	return true;
+}
+
 
 circle geom::welzl_2(vec2 a, vec2 b) {
 	return {a, b};

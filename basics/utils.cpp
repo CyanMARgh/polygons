@@ -8,6 +8,10 @@ vec3 rand_unit() {
 	float r = sqrt(1-y*y);
 	return {r*sinf(phi), y, r*cosf(phi)};
 }
+vec2 rand_unit2() {
+	float phi = randf() * M_PI * 2;
+	return {sinf(phi), cosf(phi)};
+}
 vec2 rand_vec2() { return {randf(), randf()}; }
 
 vec3 operator*(vec3 a, vec3 b) { return {a.x * b.x, a.y * b.y, a.z * b.z}; }
@@ -108,4 +112,7 @@ cross_type check_intersection(vec2 a, vec2 b, vec2 c, vec2 d) {
 	} else {
 		return cross_type::NONE;
 	}
+}
+vec2 find_intersection(vec2 a, vec2 b, vec2 c, vec2 d) {
+	return c - (d - c) * cross(c - a, b - a) / cross(d - c, b - a);
 }

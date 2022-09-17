@@ -11,6 +11,7 @@ const float EPS = 1e-7;
 
 float randf();
 vec3 rand_unit();
+vec2 rand_unit2();
 vec2 rand_vec2();
 
 //vec3
@@ -65,6 +66,7 @@ enum class cross_type {
 
 s32 sign(float v);
 cross_type check_intersection(vec2 a, vec2 b, vec2 c, vec2 d);
+vec2 find_intersection(vec2 a, vec2 b, vec2 c, vec2 d);
 
 template<typename T>
 std::pair<std::vector<u32>, std::vector<u32>> make_permutation(const std::vector<T>& P, std::function<bool(T, T)> cmp) {

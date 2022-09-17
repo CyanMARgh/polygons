@@ -4,6 +4,8 @@
 #include "surface.h"
 #include <string.h>
 #include "utils.h"
+#include "spatial_graph.h"
+#include "voronoi.h"
 
 plotter::base::base(sf::RenderWindow& rw) {
 	this->rw = &rw;
@@ -84,9 +86,16 @@ void plotter::base::draw(const surface& S) {
 	any_spr.setScale((vec2)rw->getSize() / (vec2)S.size);
 	rw->draw(any_spr);
 }
-void plotter::base::draw(const geom::triangulation& T) {
+void plotter::base::draw(const triangulation& T) {
 	for(auto t : T.lines) {
-		vec2 A = T.source->at(t.a), B = T.source->at(t.b);
+		vec2 A = T.source->at(t.first.a), B = T.source->at(t.first.b);
 		draw({A, B}, style::SEGMENT);
+	}
+}
+void plotter::base::draw(const spatial_graph& T) {
+	for(u32 i = 0, I = T.edges.size(); i < I; i++) {
+		for(auto j : T.edges[i]) {
+			draw({T.verts[i], T.verts[j]}, style::SEGMENT);
+		}
 	}
 }

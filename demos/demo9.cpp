@@ -5,6 +5,8 @@
 #include "surface.h"
 #include "sliceable_group.h"
 #include "utils.h"
+#include "spatial_graph.h"
+#include "voronoi.h"
 
 void demo::voronoi() {
 	bool pressed = false;
@@ -22,6 +24,7 @@ void demo::voronoi() {
 	plotter plt(window);
 	point_cloud cloud = {};
 	triangulation t = {};
+	spatial_graph voronoi = {}; 
 
 	while(window.isOpen()) {
 		vec2 mpos = inv * (vec2)sf::Mouse::getPosition(window);
@@ -42,7 +45,8 @@ void demo::voronoi() {
 				}
 				case sf::Event::KeyPressed: {
 					if(e.key.code == sf::Keyboard::Enter) {
-						t = geom::make_delaunay_triangulation(cloud);
+						t = make_delaunay_triangulation(cloud);
+						voronoi = delaunay_to_voronoi(t);
 					} 
 				}
 			}
@@ -50,7 +54,8 @@ void demo::voronoi() {
 		window.clear();
 
 		plt->draw(cloud);
-		plt->draw(t);
+		//plt->draw(t);
+		plt->draw(voronoi);
 		window.display();
 	}
 }

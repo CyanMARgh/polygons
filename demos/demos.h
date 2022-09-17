@@ -13,4 +13,7 @@ namespace demo {
 	void skeleton();
 	void rfoe();
 	void voronoi();
+	void spatial_graph_intersections();
+	void voronoi_slicing();
+	void even_slicing();
 }

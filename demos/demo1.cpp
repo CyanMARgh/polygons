@@ -1,6 +1,7 @@
 #include "demos.h"
 #include "polygon.h"
 #include "plot.h"
+#include "hull.h"
 #include <thread>
 
 void demo::convex_hull() {
