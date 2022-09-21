@@ -7,32 +7,32 @@
 #include <queue>
 
 //base
-poly::poly() {
+Poly::Poly() {
 	points = {}, size = 0;
 }
-poly::poly(std::vector<vec2> other) : points(std::move(other)) { 
+Poly::Poly(std::vector<vec2> other) : points(std::move(other)) { 
 	size = points.size();
 }
-poly& poly::operator=(std::vector<vec2> other) {
+Poly& Poly::operator=(std::vector<vec2> other) {
 	size = other.size();
 	points = std::move(other);
 	return *this;
 }
-poly::poly(const poly& P) {
+Poly::Poly(const Poly& P) {
 	points = P.points;
 	size = P.size;
 }
-void poly::add(vec2 p) {
+void Poly::add(vec2 p) {
 	points.push_back(p);
 	++size;
 }
-vec2& poly::operator[](s32 i) {
+vec2& Poly::operator[](s32 i) {
 	return points[mmod(i, points.size())];
 }
-vec2 poly::operator[](s32 i) const {
+vec2 Poly::operator[](s32 i) const {
 	return points[mmod(i, points.size())];
 }
-box2 poly::bounding_box() const {
+Box2 Poly::bounding_box() const {
 	vec2 mi = {1.e10f, 1.e10f}, ma = {-1.e10f, -1.e10f};
 	for(auto p : points) {
 		if(mi.x > p.x) mi.x = p.x;
@@ -40,16 +40,16 @@ box2 poly::bounding_box() const {
 		if(ma.x < p.x) ma.x = p.x;
 		if(ma.y < p.y) ma.y = p.y;
 	}
-	return box2(ma - mi, mi);
+	return Box2(ma - mi, mi);
 }
 
 // is inside
-intersection geom::inspect_zone( const poly& P, monotonic_zones::zone z, vec2 p, vec2 n) {
+Intersection geom::inspect_zone( const Poly& P, Monotonic_Zones::zone z, vec2 p, vec2 n) {
 	float py = dot(p, n), ay = dot(P[z.a], n), by = dot(P[z.b], n), cy;
 	float mi = fmin(ay, by), ma = fmax(ay, by);
 
-	if(py <= mi || py >= ma || z.type == seg_type::ANY) return {0.f, 0.f, -1};
-	bool u_d = z.type == seg_type::UP;
+	if(py <= mi || py >= ma || z.type == Seg_Type::ANY) return {0.f, 0.f, -1};
+	bool u_d = z.type == Seg_Type::UP;
 
 	for(u32 c;;) {
 		c = (z.a + z.b) / 2;
@@ -64,21 +64,21 @@ intersection geom::inspect_zone( const poly& P, monotonic_zones::zone z, vec2 p,
 
 	return {t1, t2, z.a};	
 }
-monotonic_zones geom::divide_to_monotonics(const poly& P, vec2 n) {
+Monotonic_Zones geom::divide_to_monotonics(const Poly& P, vec2 n) {
 	if(!P.size) return {};
 
-	std::vector<monotonic_zones::zone> parts;
+	std::vector<Monotonic_Zones::zone> parts;
 	s32 i0 = 0;
 
-	seg_type type0, type_temp;
-	while((type0 = get_seg_type(P, i0, n)) == seg_type::ANY && i0 < P.size) i0++;
+	Seg_Type type0, type_temp;
+	while((type0 = get_seg_type(P, i0, n)) == Seg_Type::ANY && i0 < P.size) i0++;
 	if(i0 == P.size) return {{{0, (s32)P.size, type0}}};
 	i0++;
-	while(type_temp = get_seg_type(P, i0, n), (type_temp == seg_type::ANY || type_temp == type0) && i0 <= P.size) i0++;
+	while(type_temp = get_seg_type(P, i0, n), (type_temp == Seg_Type::ANY || type_temp == type0) && i0 <= P.size) i0++;
 
 	for(s32 i = i0, is = i0; i < i0 + P.size; i++) {
-		seg_type type_next = get_seg_type(P, i + 1, n);
-		if(type_next == seg_type::ANY) continue;
+		Seg_Type type_next = get_seg_type(P, i + 1, n);
+		if(type_next == Seg_Type::ANY) continue;
 		if(type_temp != type_next) {
 			parts.push_back({is, i + 1, type_temp});
 			type_temp = type_next, is = i + 1;
@@ -86,27 +86,27 @@ monotonic_zones geom::divide_to_monotonics(const poly& P, vec2 n) {
 	}
 	return {parts};
 }
-s32 geom::is_inside_val(const poly& P, const monotonic_zones& mz, vec2 p, vec2 n) {
+s32 geom::is_inside_val(const Poly& P, const Monotonic_Zones& mz, vec2 p, vec2 n) {
 	s32 s = 0;
 	for(auto z : mz.parts) {
 		auto r = geom::inspect_zone(P, z, p, n);
-		if(r.id != -1) s += (r.t2 < 0) * (z.type == seg_type::UP ? 1 : -1);
+		if(r.id != -1) s += (r.t2 < 0) * (z.type == Seg_Type::UP ? 1 : -1);
 	}
 	return s;
 }
-seg_type geom::get_seg_type(const poly& P, s32 i, vec2 n) {
+Seg_Type geom::get_seg_type(const Poly& P, s32 i, vec2 n) {
 	float q = dot(n, P[i+1]-P[i]);
-	return q > 0 ? seg_type::UP : q < 0 ? seg_type::DOWN : seg_type::ANY; 
+	return q > 0 ? Seg_Type::UP : q < 0 ? Seg_Type::DOWN : Seg_Type::ANY; 
 }
 
 //slice
-intersection_list geom::find_intersections(const poly& P, line l) {
+Intersection_List geom::find_intersections(const Poly& P, Line l) {
 	if(l.b == l.a) return {};
 	vec2 ab = l.b - l.a;
 	vec2 n = rrot(ab);
-	monotonic_zones mz = divide_to_monotonics(P, n);
+	Monotonic_Zones mz = divide_to_monotonics(P, n);
 
-	intersection_list il = {};
+	Intersection_List il = {};
 	for(auto z : mz.parts) {
 		auto r = geom::inspect_zone(P, z, l.a, n);
 		if(r.id != -1) il.push_back(r);
@@ -115,28 +115,28 @@ intersection_list geom::find_intersections(const poly& P, line l) {
 
 	return il;
 }
-point_cloud to_cloud(const poly& P, const intersection_list& L) {
-	point_cloud cloud = {};
+Point_Cloud to_cloud(const Poly& P, const Intersection_List& L) {
+	Point_Cloud cloud = {};
 	for(auto I : L) {
 		cloud.push_back(lerp(P[I.id], P[I.id + 1], I.t1));
 	}
 	return cloud;
 }
 
-std::vector<poly> divide(const poly& P, const intersection_list& L) {
+std::vector<Poly> divide(const Poly& P, const Intersection_List& L) {
 	u32 n = L.size(), ps = P.size;
 	if(!n) return {P};
-	auto [ids, rids] = make_permutation<intersection>(L, [] (intersection a, intersection b) { return a.t2 <= b.t2; });
+	auto [ids, rids] = make_permutation<Intersection>(L, [] (Intersection a, Intersection b) { return a.t2 <= b.t2; });
 
 	std::vector<bool> used(n, false);
 
 	auto next_c = [&] (u32 i) { return (i + 1) % n; };
 	auto next_l = [&] (u32 i) { return  ids[rids[i] ^ 1]; };
 
-	std::vector<poly> ans;
+	std::vector<Poly> ans;
 	for(u32 pi = 0; pi < n; pi++) {
 		if(used[pi]) continue;
-		poly P0;
+		Poly P0;
 		for(u32 i = pi, j; !used[i]; ) {
 			j = next_c(i);
 			auto Is = L[i], Ie = L[j];
@@ -153,9 +153,9 @@ std::vector<poly> divide(const poly& P, const intersection_list& L) {
 	}
 	return ans;
 }
-std::pair<std::vector<poly>, point_cloud> geom::divide(const poly& P, vec2 p0, vec2 n, float h, u32 N) {
+std::pair<std::vector<Poly>, Point_Cloud> geom::divide(const Poly& P, vec2 p0, vec2 n, float h, u32 N) {
 	u32 ps = P.size;
-	monotonic_zones mz = divide_to_monotonics(P, n);
+	Monotonic_Zones mz = divide_to_monotonics(P, n);
 	struct intersection_2 {
 		u32 row, lid, cid;
 		float t1, t2; 
@@ -168,7 +168,7 @@ std::pair<std::vector<poly>, point_cloud> geom::divide(const poly& P, vec2 p0, v
 			auto z = mz.parts[mzi];
 			auto r = geom::inspect_zone(P, z, p0 - row * h * n, n);
 			if(r.id != -1) {
-				intersection_2 I = {row, -1u, (u32)r.id, r.t1, r.t2, z.type == seg_type::DOWN };
+				intersection_2 I = {row, -1u, (u32)r.id, r.t1, r.t2, z.type == Seg_Type::DOWN };
 				il.push_back(I);
 			}
 		}
@@ -185,7 +185,7 @@ std::pair<std::vector<poly>, point_cloud> geom::divide(const poly& P, vec2 p0, v
 		a.cid < b.cid; 
 	});
 
-	point_cloud cloud = {};
+	Point_Cloud cloud = {};
 	for(auto i : il) { cloud.push_back(inter_coord(i)); }
 	//for(auto i : ids) { cloud.push_back(inter_coord(il[i])); }
 
@@ -194,11 +194,11 @@ std::pair<std::vector<poly>, point_cloud> geom::divide(const poly& P, vec2 p0, v
 	auto next_l = [] (u32 i) -> u32 { return i ^ 1; };
 
 	std::vector<bool> visited(iln, false);
-	std::vector<poly> result;
+	std::vector<Poly> result;
 
 	for(u32 i = 0; i < iln; i++) {
 		if(visited[i]) continue;
-		poly Pi;
+		Poly Pi;
 		for(u32 j = i, k; !visited[j]; ) {
 			k = next_c(j);
 			auto Is = il[j], Ie = il[k];
@@ -213,7 +213,7 @@ std::pair<std::vector<poly>, point_cloud> geom::divide(const poly& P, vec2 p0, v
 	}
 	return {result, cloud};
 }
-std::vector<poly> geom::divide_evenly(const poly& P, line L, float h) {
+std::vector<Poly> geom::divide_evenly(const Poly& P, Line L, float h) {
 	float l = 1.e10f, r = -l, t = r, d = l;
 	vec2 nr = normalize(L.a - L.b);
 	vec2 n = lrot(nr);
@@ -229,15 +229,15 @@ std::vector<poly> geom::divide_evenly(const poly& P, line L, float h) {
 	//vec2 p0 = (l + r) * .5f * nr + ((t + d - N * h) * .5f - N * h) * n;
 	vec2 p0 = (l + r + N * h) * .5f * nr + ((t + d + N * h) * .5f) * n;
 
-	std::vector<poly> hor_sliced = divide(P, p0, n, h, N).first;
-	std::vector<std::vector<poly>> ver_sliced = {};
+	std::vector<Poly> hor_sliced = divide(P, p0, n, h, N).first;
+	std::vector<std::vector<Poly>> ver_sliced = {};
 	u32 S = 0;
 	for(auto &Pi : hor_sliced) {
 		auto vsi = divide(Pi, p0, nr, h, N2).first;
 		S += vsi.size();
 		ver_sliced.push_back(vsi);
 	}
-	std::vector<poly> result(S);
+	std::vector<Poly> result(S);
 	u32 Si = 0;
 	for(auto &Pi : ver_sliced) {
 		std::copy(Pi.begin(), Pi.end(), result.begin() + Si);
@@ -248,7 +248,7 @@ std::vector<poly> geom::divide_evenly(const poly& P, line L, float h) {
 }
 
 
-bool geom::has_self_intersections(const poly& P) {
+bool geom::has_self_intersections(const Poly& P) {
 	// for(u32 n = P.size, i = 0; i < n; i++) {
 	// 	vec2 a = P[i], b = P[i + 1];
 	// 	for(u32 j = i + 2; j < n - !i; j++) {
@@ -305,16 +305,16 @@ bool geom::has_self_intersections(const poly& P) {
 	return false;
 }
 
-bool geom::is_valid(const poly& P) {
+bool geom::is_valid(const Poly& P) {
 	return area(P) > 0 && !has_self_intersections(P);
 }
 
 //skeleton
-std::pair<float, vec2> geom::bis_inter(line X, line Y, line Z) {
+std::pair<float, vec2> geom::bis_inter(Line X, Line Y, Line Z) {
 	vec2 a = X.a, b = X.b, c = Y.a, d = Y.b, e = Z.a, f = Z.b;
 	vec2 n1 = rrot(normalize(b - a)), n2 = rrot(normalize(d - c)), n3 = rrot(normalize(f - e));
 
-	mat2x2 M = mat2x2::from_rows(n1 - n2, n2 - n3);
+	Mat2x2 M = Mat2x2::from_rows(n1 - n2, n2 - n3);
 	vec2 V = {dot(a, n1) - dot(c, n2), dot(c, n2) - dot(e, n3)};
 
 	vec2 Q = M.inv() * V;
@@ -330,7 +330,7 @@ bool geom::sk_event_2::operator<(const geom::sk_event_2& e2) const {
 	return h > e2.h;
 }
 
-geom::skeleton geom::make_skeleton_from_convex(const poly& P) {
+geom::skeleton geom::make_skeleton_from_convex(const Poly& P) {
 	u32 n = P.size;
 	struct edge {
 		u32 id0;	// id of (parallel) origin segment
@@ -358,13 +358,13 @@ geom::skeleton geom::make_skeleton_from_convex(const poly& P) {
 		u32 in = (i + 1) % n, ip = (i + n - 1) % n;
 		edge_list[i] = {i, ip, in, i, in};
 	}
-	auto line_at_vi = [&P] (u32 id0) -> line {
+	auto line_at_vi = [&P] (u32 id0) -> Line {
 		return {P[id0], P[id0 + 1]};
 	};
-	// auto line_at = [&P] (edge e) -> line {
+	// auto line_at = [&P] (edge e) -> Line {
 	// 	return {P[e.id0], P[e.id0 + 1]};
 	// };
-	auto line_at = [&P] (const edge* edge_list, u32 edge_id) -> line {
+	auto line_at = [&P] (const edge* edge_list, u32 edge_id) -> Line {
 		u32 id0 = edge_list[edge_id].id0;
 		return {P[id0], P[id0 + 1]};
 	};
@@ -406,7 +406,7 @@ geom::skeleton geom::make_skeleton_from_convex(const poly& P) {
 	// };
 
 	auto make_split_event = [&line_at_vi, n] (/*edge* edge_list, */u32 o0, u32 k0) -> sk_event {
-		line AB = line_at_vi(k0), BC = line_at_vi(k0 + 1), DE = line_at_vi(o0);
+		Line AB = line_at_vi(k0), BC = line_at_vi(k0 + 1), DE = line_at_vi(o0);
 
 		printf("AB: (%f %f) (%f %f)\n", AB.a.x, AB.a.y, AB.b.x, AB.b.y);
 		printf("BC: (%f %f) (%f %f)\n", BC.a.x, BC.a.y, BC.b.x, BC.b.y);
@@ -533,7 +533,7 @@ geom::skeleton geom::make_skeleton_from_convex(const poly& P) {
 	return S;
 }
 
-geom::skeleton_2 geom::make_skeleton_from_convex_2(const poly& P) {
+geom::skeleton_2 geom::make_skeleton_from_convex_2(const Poly& P) {
 	u32 n = P.size;
 	const u32 INVALID_ID = -1u;
 	struct vert {
@@ -553,7 +553,7 @@ geom::skeleton_2 geom::make_skeleton_from_convex_2(const poly& P) {
 	auto right_iv = [&LAV] (u32 iv) -> u32 {
 		return LAV[iv].iv_r;
 	};
-	auto line_at_v = [&P] (vert v) -> line {
+	auto line_at_v = [&P] (vert v) -> Line {
 		return {P[v.origin], P[v.origin + 1]};
 	};
 	auto add_edge_event = [&LAV, &line_at_v, &events] (u32 iv_2) -> void {
@@ -573,7 +573,7 @@ geom::skeleton_2 geom::make_skeleton_from_convex_2(const poly& P) {
 		vec2 ba = normalize(A - B), cb = normalize(B - C), cd = normalize(D - C), bq = Q - B, cq = Q - C;
 		return dot(ba + cb, bq) < 0.f && dot(cb - cd, cq) > 0.f; 
 	};
-	auto is_inside_bis_triangle_2 = [](line L1, line L2, line L3, vec2 Q) -> bool {
+	auto is_inside_bis_triangle_2 = [](Line L1, Line L2, Line L3, vec2 Q) -> bool {
 		vec2 a = L1.a, b = L1.b, c = L2.a, d = L2.b, e = L3.a, f = L3.b;
 		vec2 ab = b - a, cd = d - c, ef = f - e;
 		float lab = len(ab), lcd = len(cd), lef = len(ef);
@@ -755,7 +755,7 @@ geom::skeleton_2 geom::make_skeleton_from_convex_2(const poly& P) {
 	printf("(2)\n");
 	return {S, iv_to_iske};
 }
-std::vector<poly> geom::scale_with_sceleton(const poly& P, const skeleton_2& S, float h) {
+std::vector<Poly> geom::scale_with_sceleton(const Poly& P, const skeleton_2& S, float h) {
 	u32 n = P.size;
 	struct vert {
 		u32 origin;
@@ -772,7 +772,7 @@ std::vector<poly> geom::scale_with_sceleton(const poly& P, const skeleton_2& S, 
 	auto right_iv = [&LAV] (u32 iv) -> u32 {
 		return LAV[iv].iv_r;
 	};
-	auto line_at_v = [&P] (vert v) -> line {
+	auto line_at_v = [&P] (vert v) -> Line {
 		return {P[v.origin], P[v.origin + 1]};
 	};
 	auto merge = [n, &LAV] (sk_event_2 e) -> void {
@@ -828,11 +828,11 @@ std::vector<poly> geom::scale_with_sceleton(const poly& P, const skeleton_2& S, 
 	// auto next_id = [&LAV] (u32 i) -> u32 {
 	// 	return LAV[i].iv_r;
 	// };
-	auto line_at_iv = [&P, &LAV] (u32 vi) -> line {
+	auto line_at_iv = [&P, &LAV] (u32 vi) -> Line {
 		u32 io = LAV[vi].origin;
 		return {P[io], P[io + 1]};
 	};
-	auto make_gap = [](line L1, line L2, float h) -> vec2 {
+	auto make_gap = [](Line L1, Line L2, float h) -> vec2 {
 		vec2 a = L1.a, b = L1.b, c = L2.a, d = L2.b;
 		vec2 ab = b - a, cd = d - c;
 		vec2 a_ = a + rrot(normalize(ab)) * h, c_ = c + rrot(normalize(cd)) * h;
@@ -842,12 +842,12 @@ std::vector<poly> geom::scale_with_sceleton(const poly& P, const skeleton_2& S, 
 	};
 
 	std::vector<bool> used(LAV.size(), false);
-	std::vector<poly> result;
+	std::vector<Poly> result;
 
 	for(u32 i = 0; i < LAV.size(); i++) {
 		if(used[i]) continue;
 		u32 j = i;
-		poly Pi;
+		Poly Pi;
 		do {
 			used[j] = true;
 			u32 k = LAV[j].iv_r;
@@ -860,11 +860,11 @@ std::vector<poly> geom::scale_with_sceleton(const poly& P, const skeleton_2& S, 
 	return result;
 }
 
-// delaunay triangulation & voronoi
-reindexed_cloud geom::to_sorted_vertical(const point_cloud& cloud) {
-	const point_cloud* t = &cloud;
+// delaunay Triangulation & voronoi
+Reindexed_Cloud geom::to_sorted_vertical(const Point_Cloud& cloud) {
+	const Point_Cloud* t = &cloud;
 	u32 n = cloud.size();
-	reindexed_cloud rc(std::vector<u32>(n), t);
+	Reindexed_Cloud rc(std::vector<u32>(n), t);
 	for(u32 i = 0; i < n; i++) rc[i] = i;
 	std::sort(rc.begin(), rc.end(), [t](u32 a, u32 b) { 
 		vec2 pa = t->at(a), pb = t->at(b);
@@ -872,12 +872,12 @@ reindexed_cloud geom::to_sorted_vertical(const point_cloud& cloud) {
 	});	
 	return rc;
 }
-bool id_line::operator<(id_line l2) const {
+bool Id_Line::operator<(Id_Line l2) const {
 	return a == l2.a ? b < l2.b : a < l2.a;
 }
-bool id_line::operator==(id_line l2) const {
+bool Id_Line::operator==(Id_Line l2) const {
 	return a == l2.a && b == l2.b;
 }
-bool id_line::operator!=(id_line l2) const {
+bool Id_Line::operator!=(Id_Line l2) const {
 	return a != l2.a || b != l2.b;
 }

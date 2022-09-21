@@ -2,7 +2,7 @@
 #include "utils.h"
 #include "sliceable_group.h"
 
-border rasterize_monotomics(const surface& S, const poly& P, monotonic_zones::zone z) {
+border rasterize_monotomics(const Surface& S, const Poly& P, Monotonic_Zones::zone z) {
 	vec2s pi_a = S.proj(P[z.a]), pi_b = S.proj(P[z.b]);
 	if (pi_a.y == pi_b.y) return {pi_a};
 	border B = {pi_a, pi_b};
@@ -11,7 +11,7 @@ border rasterize_monotomics(const surface& S, const poly& P, monotonic_zones::zo
 		return  S.proj(vec2(lerp(a.x, b.x, rlerp(a.y, b.y, y)), y)).x;
 	};
 
-	if(z.type == seg_type::UP) {
+	if(z.type == Seg_Type::UP) {
 		for(s32 i = pi_a.y + 1, j = z.a; i < pi_b.y; i++) {
 			float hj, hi = S.grid_h(i);
 			while(j < z.b && (hj = P[j + 1].y) < hi) j++;
@@ -27,45 +27,45 @@ border rasterize_monotomics(const surface& S, const poly& P, monotonic_zones::zo
 	return B;
 }
 
-vec2s surface::proj(vec2 p) const {
+vec2s Surface::proj(vec2 p) const {
 	p = zone * p;
 	return {(s32)p.x, (s32)p.y};
 }
-float surface::grid_h(s32 i) const { return (invzone * vec2(0, i)).y; }
-u32& surface::at(vec2u i) { return data[i.x + size.x * i.y]; }
-u32 surface::at(vec2u i) const { return data[i.x + size.x * i.y]; }
-void surface::draw(vec2s coord, u32 value) {
+float Surface::grid_h(s32 i) const { return (invzone * vec2(0, i)).y; }
+u32& Surface::at(vec2u i) { return data[i.x + size.x * i.y]; }
+u32 Surface::at(vec2u i) const { return data[i.x + size.x * i.y]; }
+void Surface::draw(vec2s coord, u32 value) {
 	if(coord.x >= 0 && coord.y >= 0 && coord.x < size.x && coord.y < size.y) {
 		at((vec2u)coord) = value;
 	}
 }
-void surface::draw(vec2 p, u32 value) {
+void Surface::draw(vec2 p, u32 value) {
 	draw(proj(p), value);
 }
-void surface::draw(const point_cloud& cloud, u32 value) {
+void Surface::draw(const Point_Cloud& cloud, u32 value) {
 	for(auto p : cloud) { 
 		draw(p, value);
 	}
 }
 
-void surface::draw(const border& B, u32 value) {
+void Surface::draw(const border& B, u32 value) {
 	for(auto pi : B) draw(pi, value);
 }
 
-surface::surface(vec2u size, box2 virtual_zone) : size(size) {
-	zone = box2((vec2)size) * virtual_zone.inv();
+Surface::Surface(vec2u size, Box2 virtual_zone) : size(size) {
+	zone = Box2((vec2)size) * virtual_zone.inv();
 	invzone = zone.inv();
 	data = std::vector<u32>(size.x * size.y, 0);
 }
 
-void surface::draw_border(const poly& P, u32 value) {
+void Surface::draw_border(const Poly& P, u32 value) {
 	auto mz = geom::divide_to_monotonics(P);
 	for(auto z : mz.parts) {
 		border B = rasterize_monotomics(*this, P, z);
 		draw(B, value);
 	}
 }
-void surface::draw(const poly& P, u32 value) {
+void Surface::draw(const Poly& P, u32 value) {
 	if(P.size < 3) return;
 	auto mz = geom::divide_to_monotonics(P);
 	std::vector<border> borders = {};
@@ -109,16 +109,16 @@ void surface::draw(const poly& P, u32 value) {
 	}
 }
 
-void surface::draw(const sliceable_group& SG) {
+void Surface::draw(const Sliceable_Group& SG) {
 	u32 n = SG.polys.size();
-	bool m = SG.mode == sliceable_group::MOVE && SG.selected;
+	bool m = SG.mode == Sliceable_Group::MOVE && SG.selected;
 	for(u32 i = 0; i + m < n; i++) {
 		//printf("DRAW: %d ", i);
 		draw(SG.polys[SG.order[i]], SG.colors[SG.order[i]]);
 	} 
 	if(m) {
 		vec2 delta = SG.mouse_curr - SG.mouse_buf;
-		poly T_m = *(SG.top());
+		Poly T_m = *(SG.top());
 		for(u32 i = 0; i < T_m.size; i++) {
 			T_m[i] += delta;
 		}
@@ -128,7 +128,7 @@ void surface::draw(const sliceable_group& SG) {
 }
 
 
-void surface::clear() { std::fill(data.begin(), data.end(), 0); }
+void Surface::clear() { std::fill(data.begin(), data.end(), 0); }
 
 
 

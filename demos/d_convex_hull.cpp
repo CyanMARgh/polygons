@@ -5,10 +5,10 @@
 #include <thread>
 
 void demo::convex_hull() {
-	point_cloud cloud = {};
+	Point_Cloud cloud = {};
 
 	float point_rad = 3, win_size = 800, center_rad = 10;
-	box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();;
+	Box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();;
 	sf::CircleShape point(point_rad);
 	point.setOrigin(point_rad, point_rad);
 
@@ -39,7 +39,7 @@ void demo::convex_hull() {
 		if(state == HOLD) cloud.push_back(mpos);
 		window.clear();
 		if(cloud.size() > 2) {
-			poly P = geom::hull_by_circular(geom::to_circular_sorted(cloud)).make_poly();
+			Poly P = geom::hull_by_circular(geom::to_circular_sorted(cloud)).make_poly();
 			plt->draw(P);
 		}
 		plt->draw(cloud);
@@ -49,7 +49,7 @@ void demo::convex_hull() {
 
 void demo::convex_hull_tests() {
 	float point_rad = 3, win_size = 800, center_rad = 10;
-	box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();;
+	Box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();;
 
 	sf::CircleShape point(point_rad);
 	point.setOrigin(point_rad, point_rad);

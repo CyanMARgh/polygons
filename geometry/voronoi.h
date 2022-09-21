@@ -1,9 +1,9 @@
 #include "geometry.h"
 
-struct triangulation {
-	std::vector<std::pair<id_line, id_line>> lines; 
-	const point_cloud* source;
+struct Triangulation {
+	std::vector<std::pair<Id_Line, Id_Line>> lines; 
+	const Point_Cloud* source;
 };
-triangulation make_delaunay_triangulation(const point_cloud& sites_unsorted);
-spatial_graph delaunay_to_voronoi(const triangulation& T);
-spatial_graph make_voronoi_diagram_2(point_cloud sites);
+Triangulation make_delaunay_triangulation(const Point_Cloud& sites_unsorted);
+Spatial_Graph delaunay_to_voronoi(const Triangulation& T);
+Spatial_Graph make_voronoi_diagram_2(Point_Cloud sites);

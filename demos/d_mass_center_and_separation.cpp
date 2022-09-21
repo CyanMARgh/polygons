@@ -12,15 +12,15 @@ void demo::mass_center_and_separation() {
 
 	float pointRad = 3, winSize = 800, centerRad = 10;
 
-	box2 wintr = {winSize,-winSize,0,winSize}, inv = wintr.inv();
+	Box2 wintr = {winSize,-winSize,0,winSize}, inv = wintr.inv();
 
 	sf::CircleShape point(pointRad), center(centerRad);
 	point.setOrigin(pointRad, pointRad);
 	center.setOrigin(centerRad, centerRad);
 	center.setFillColor(sf::Color(255, 255, 255));
 
-	poly P;
-	monotonic_zones mz;
+	Poly P;
+	Monotonic_Zones mz;
 
 	sf::RenderWindow window(sf::VideoMode(winSize, winSize), "polygons");
 	plotter plt(window);

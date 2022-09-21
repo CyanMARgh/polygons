@@ -12,15 +12,15 @@ void demo::poly_x_line_intersection() {
 	} state = FREE;
 
 	float point_rad = 3, win_size = 800;
-	box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();
+	Box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();
 
 	sf::CircleShape point(point_rad);
 	point.setOrigin(point_rad, point_rad);
 
-	poly P;
-	std::vector<poly> P_sliced;
-	line L;
-	point_cloud cloud;
+	Poly P;
+	std::vector<Poly> P_sliced;
+	Line L;
+	Point_Cloud cloud;
 
 	sf::RenderWindow window(sf::VideoMode(win_size, win_size), "polygons");
 	plotter plt(window);

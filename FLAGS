@@ -1,3 +1,2 @@
 all -lsfml-window -lsfml-system -lsfml-graphics -lpthread -std=c++17 -lm -O3 -DNDEBUG
 buffer.cpp -I /home/cyanmargh/boost_1_79_0
-flags.cpp -I /home/cyanmragh/boost_1_79_0

@@ -4,29 +4,29 @@
 #include "utils.h"
 #include "color.h"
 
-poly* sliceable_group::top() {
+Poly* Sliceable_Group::top() {
 	u32 s = order.size();
 	return s ? &polys[order[s - 1]] : nullptr;
 }
-const poly* sliceable_group::top() const {
+const Poly* Sliceable_Group::top() const {
 	u32 s = order.size();
 	return s ? &polys[order[s - 1]] : nullptr;
 }
 
-void sliceable_group::start_draw() {
+void Sliceable_Group::start_draw() {
 	u32 s = polys.size();
-	poly np = {};
+	Poly np = {};
 	polys.push_back(np);
 	order.push_back(s);
 	colors.push_back(color::lazy_any(s));
 }
-void sliceable_group::keep_draw() {
-	poly &T = *top();
+void Sliceable_Group::keep_draw() {
+	Poly &T = *top();
 	if(!T.size || T[-1] != mouse_curr) T.add(mouse_curr);
 }
-void sliceable_group::end_draw() {
-	poly* T = top();
-	if(!T) throw std::runtime_error("no top poly\n");
+void Sliceable_Group::end_draw() {
+	Poly* T = top();
+	if(!T) throw std::runtime_error("no top Poly\n");
 	if(geom::is_valid(*T)) {
 		mzs.push_back(geom::divide_to_monotonics(*T));
 	} else {
@@ -38,7 +38,7 @@ void sliceable_group::end_draw() {
 }
 
 
-void sliceable_group::start_move() {
+void Sliceable_Group::start_move() {
 	mouse_buf = mouse_curr;
 	for(s32 i = order.size() - 1, j; i >= 0; i--) {
 		j = order[i];
@@ -49,12 +49,12 @@ void sliceable_group::start_move() {
 		}
 	}
 }
-void sliceable_group::keep_move() { }
-void sliceable_group::end_move() {
+void Sliceable_Group::keep_move() { }
+void Sliceable_Group::end_move() {
 	if(selected) {
 		vec2 delta = mouse_curr - mouse_buf;
 		//printf("delta: (%f %f)\n", delta.x, delta.y);
-		poly* T = top();
+		Poly* T = top();
 		if(T) {
 			for(u32 i = 0, n = T->size; i < n; i++) {
 				(*T)[i] += delta;
@@ -66,15 +66,15 @@ void sliceable_group::end_move() {
 }
 
 
-void sliceable_group::start_slice() { mouse_buf = mouse_curr; }
-void sliceable_group::keep_slice() { }
-void sliceable_group::end_slice() {
-	line L = {mouse_buf, mouse_curr};
+void Sliceable_Group::start_slice() { mouse_buf = mouse_curr; }
+void Sliceable_Group::keep_slice() { }
+void Sliceable_Group::end_slice() {
+	Line L = {mouse_buf, mouse_curr};
 	if(len(L.a - L.b) < EPS) L.b = L.a + vec2(0., 1.);
-	poly& T = *top();
-	//std::vector<poly> p_sliced = divide(T, geom::find_intersections(T, L));
-	//std::vector<poly> p_sliced = geom::divide(T, L.a, rrot(normalize(L.b - L.a)), 0.1f, 3);
-	std::vector<poly> p_sliced = geom::divide_evenly(T, L, 0.1f);
+	Poly& T = *top();
+	//std::vector<Poly> p_sliced = divide(T, geom::find_intersections(T, L));
+	//std::vector<Poly> p_sliced = geom::divide(T, L.a, rrot(normalize(L.b - L.a)), 0.1f, 3);
+	std::vector<Poly> p_sliced = geom::divide_evenly(T, L, 0.1f);
 
 
 	u32 s = order.size(), n = p_sliced.size();
@@ -91,7 +91,7 @@ void sliceable_group::end_slice() {
 }
 
 
-void sliceable_group::update(bool pressed_new, mode_t mode_new, vec2 mouse_new) {
+void Sliceable_Group::update(bool pressed_new, mode_t mode_new, vec2 mouse_new) {
 	mouse_curr = mouse_new;
 	if(pressed && pressed_new) {
 		if(mode == DRAW) {

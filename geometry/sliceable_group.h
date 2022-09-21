@@ -1,8 +1,8 @@
 #include "geometry.h"
 
-struct sliceable_group {
-	std::vector<poly> polys = {};
-	std::vector<monotonic_zones> mzs = {};
+struct Sliceable_Group {
+	std::vector<Poly> polys = {};
+	std::vector<Monotonic_Zones> mzs = {};
 	std::vector<u32> colors = {};
 	std::vector<u32> order = {};
 
@@ -12,8 +12,8 @@ struct sliceable_group {
 
 	void update(bool pressed_new, mode_t mode_new, vec2 mouse_new);
 
-	poly* top();
-	const poly* top() const;
+	Poly* top();
+	const Poly* top() const;
 
 	void start_draw();
 	void keep_draw();

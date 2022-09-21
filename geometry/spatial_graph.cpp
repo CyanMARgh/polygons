@@ -6,9 +6,9 @@
 #include "utils.h"
 #include "primitives.h"
 
-std::set<id_line> add_self_intersections(spatial_graph& G, std::vector<id_line> marked) {
+std::set<Id_Line> add_self_intersections(Spatial_Graph& G, std::vector<Id_Line> marked) {
 	struct event { u32 a, b; enum type_t { ADD, REMOVE } type; };
-	struct intersection { u32 a, b, c, d; vec2 Q; };
+	struct Intersection { u32 a, b, c, d; vec2 Q; };
 	struct iedge {
 		u32 a, b;
 		bool operator<(const iedge& e2) const { return a == e2.a ? b < e2.b : a < e2.a; }
@@ -29,9 +29,9 @@ std::set<id_line> add_self_intersections(spatial_graph& G, std::vector<id_line> 
 
 	std::priority_queue<event, std::vector<event>, decltype(event_cmp)> events(event_cmp);
 	std::map<std::pair<u32, u32>, std::vector<u32>> replacements;
-	std::vector<intersection> intersections;
+	std::vector<Intersection> intersections;
 	std::set<iedge> window = {};
-	std::set<id_line> marked_fixed;
+	std::set<Id_Line> marked_fixed;
 
 	auto current_edge = [&replacements] (u32 a, u32 b) -> std::pair<u32, u32> {
 		if(auto F = replacements.find({a, b}); F != replacements.end()) {
@@ -59,12 +59,12 @@ std::set<id_line> add_self_intersections(spatial_graph& G, std::vector<id_line> 
 			intersections.push_back({a, b, c, d, Q});
 		}
 	};
-	auto apply_intersection = [&G, &current_edge, &replacements] (intersection I) -> void {
+	auto apply_intersection = [&G, &current_edge, &replacements] (Intersection I) -> void {
 		u32 _a = I.a, _b = I.b, _c = I.c, _d = I.d;
 		auto [a, b] = current_edge(_a, _b);
 		auto [c, d] = current_edge(_c, _d);
 		u32 q = G.verts.size();
-		// printf("applying intersection: %d %d %d %d -> %d\n", _a, _b, _c, _d, q);
+		// printf("applying Intersection: %d %d %d %d -> %d\n", _a, _b, _c, _d, q);
 		auto add_replacement = [&replacements] (u32 a, u32 b, u32 q) -> void {
 			if(auto F = replacements.find({a, b}); F != replacements.end()) {
 				F->second.push_back(q);
@@ -98,7 +98,7 @@ std::set<id_line> add_self_intersections(spatial_graph& G, std::vector<id_line> 
 			window.insert({e.a, e.b});
 		}
 	}
-	std::sort(intersections.begin(), intersections.end(), [&cmp_v] (intersection i1, intersection i2) { return cmp_v(i1.Q, i2.Q); });
+	std::sort(intersections.begin(), intersections.end(), [&cmp_v] (Intersection i1, Intersection i2) { return cmp_v(i1.Q, i2.Q); });
 	for(auto I : intersections) { apply_intersection(I); }
 
 	// printf("replacements:\n");
@@ -143,13 +143,13 @@ std::set<id_line> add_self_intersections(spatial_graph& G, std::vector<id_line> 
 
 	return marked_fixed;
 }
-// std::vector<poly> extract_inner_polygons(const spatial_graph& G) {
+// std::vector<Poly> extract_inner_polygons(const Spatial_Graph& G) {
 // 	return {};
 // }
 
-spatial_graph graph_union(const spatial_graph& A, const spatial_graph& B) {
+Spatial_Graph graph_union(const Spatial_Graph& A, const Spatial_Graph& B) {
 	u32 Va = A.verts.size(), Vb = B.verts.size();
-	spatial_graph R;
+	Spatial_Graph R;
 	R.edges.resize(Va + Vb), R.verts.resize(Va + Vb);
 	std::copy(A.edges.begin(), A.edges.end(), R.edges.begin());
 	std::copy(A.verts.begin(), A.verts.end(), R.verts.begin());
@@ -165,7 +165,7 @@ spatial_graph graph_union(const spatial_graph& A, const spatial_graph& B) {
 	return R;
 }
 
-spatial_graph spatial_graph::from_edge_list(const std::vector<id_line>& edges, std::vector<vec2> verts) {
+Spatial_Graph Spatial_Graph::from_edge_list(const std::vector<Id_Line>& edges, std::vector<vec2> verts) {
 	std::vector<std::vector<u32>> edges_2(verts.size());
 	for(auto e : edges) {
 		edges_2[e.a].push_back(e.b);
@@ -174,9 +174,9 @@ spatial_graph spatial_graph::from_edge_list(const std::vector<id_line>& edges, s
 	return {edges_2, verts};
 }
 
-spatial_graph to_graph(poly P) {
+Spatial_Graph to_graph(Poly P) {
 	u32 n = P.size;
-	spatial_graph G;
+	Spatial_Graph G;
 	G.verts = std::move(P.points);
 	G.edges.resize(n);
 	for(u32 i = 0; i < n; i++) {
@@ -184,7 +184,7 @@ spatial_graph to_graph(poly P) {
 	}
 	return G;
 }
-void print_graph(const spatial_graph& G) {
+void print_graph(const Spatial_Graph& G) {
 	for(u32 i = 0, n = G.edges.size(); i < n; i++) {
 		printf("%d: { ", i);
 		for(auto j : G.edges[i]) {
@@ -194,12 +194,12 @@ void print_graph(const spatial_graph& G) {
 	}
 }
 
-std::vector<poly> slice_poly(const poly& P, spatial_graph& G) {
-	std::set<id_line> visited;
-	std::vector<poly> result;
-	std::vector<id_line> to_visit;
+std::vector<Poly> slice_poly(const Poly& P, Spatial_Graph& G) {
+	std::set<Id_Line> visited;
+	std::vector<Poly> result;
+	std::vector<Id_Line> to_visit;
 
-	auto next = [] (const std::vector<u32>& nbs, id_line l) -> id_line {
+	auto next = [] (const std::vector<u32>& nbs, Id_Line l) -> Id_Line {
 		u32 p = nbs.back();
 		for(auto it : nbs) {
 			if(it == l.a) return {l.b, p};
@@ -208,10 +208,10 @@ std::vector<poly> slice_poly(const poly& P, spatial_graph& G) {
 		throw std::runtime_error("");
 		return {-1u, -1u};
 	};
-	auto extract_poly = [&G, &result, &visited, &next, &to_visit] (id_line l0) -> void {
+	auto extract_poly = [&G, &result, &visited, &next, &to_visit] (Id_Line l0) -> void {
 		// printf("exctracting...\n");
-		poly Pi;
-		id_line li = l0;
+		Poly Pi;
+		Id_Line li = l0;
 		do {
 			// printf("(%d %d) ", li.a, li.b);
 			if(visited.find(li) != visited.end()) {
@@ -240,14 +240,14 @@ std::vector<poly> slice_poly(const poly& P, spatial_graph& G) {
 	{
 		G = graph_union(to_graph(P), G);
 
-		std::vector<id_line> visited_raw;
+		std::vector<Id_Line> visited_raw;
 		for(u32 i = 0, n = P.size; i < n; i++) {
 			visited_raw.push_back({(i + 1) % n, i});
 		}
 		visited = add_self_intersections(G, visited_raw);
 		rearrange_edges();
 
-		id_line visited0 = *(visited.begin());
+		Id_Line visited0 = *(visited.begin());
 		to_visit.push_back({visited0.b, visited0.a});
 	}
 
@@ -259,7 +259,7 @@ std::vector<poly> slice_poly(const poly& P, spatial_graph& G) {
 	// for(auto l: visited) { printf("{%d, %d}\n", l.a, l.b); }
 	
 	while(!to_visit.empty()) {
-		id_line l = to_visit.back();
+		Id_Line l = to_visit.back();
 		to_visit.pop_back();
 		extract_poly(l);
 	}

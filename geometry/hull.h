@@ -3,14 +3,14 @@
 namespace geom {
 	//hull
 	//TODO REMAKE TO ONE METHOD WITH LAMBDA
-	reindexed_cloud to_sorted(const point_cloud&);
-	reindexed_cloud minimal_hull(const point_cloud&);
-	reindexed_cloud to_circular_sorted(const point_cloud&);
-	reindexed_cloud hull_by_circular(const reindexed_cloud&);
-	bool is_right_convex(const poly& P);
+	Reindexed_Cloud to_sorted(const Point_Cloud&);
+	Reindexed_Cloud minimal_hull(const Point_Cloud&);
+	Reindexed_Cloud to_circular_sorted(const Point_Cloud&);
+	Reindexed_Cloud hull_by_circular(const Reindexed_Cloud&);
+	bool is_right_convex(const Poly& P);
 
 	// TODO add minimal_hull_circular
-	reindexed_cloud minimal_hull(const reindexed_cloud&);
-	std::pair<bool, poly> verify_minimal_hull(const reindexed_cloud& cloud);
-	std::tuple<bool, point_cloud, poly> minimal_hull_test(u32 N);
+	Reindexed_Cloud minimal_hull(const Reindexed_Cloud&);
+	std::pair<bool, Poly> verify_minimal_hull(const Reindexed_Cloud& cloud);
+	std::tuple<bool, Point_Cloud, Poly> minimal_hull_test(u32 N);
 }

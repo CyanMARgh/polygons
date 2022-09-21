@@ -4,13 +4,13 @@
 #include "utils.h"
 #include "spatial_graph.h"
 
-std::vector<poly> divide_evenly(const poly& P, u32 guide, u32 iterations) {
-	point_cloud sites; sites.resize(guide);
-	box2 box = P.bounding_box();
+std::vector<Poly> divide_evenly(const Poly& P, u32 guide, u32 iterations) {
+	Point_Cloud sites; sites.resize(guide);
+	Box2 box = P.bounding_box();
 	auto random_point = [&box] { return box * rand_vec2(); };
 	for(auto& p : sites) p = random_point();
 	// printf("(0)\n");
-	std::vector<poly> result;
+	std::vector<Poly> result;
 	for(u32 i = 0; i < iterations; i++) {
 		// printf("(1)\n");
 		if(i) {
@@ -25,13 +25,13 @@ std::vector<poly> divide_evenly(const poly& P, u32 guide, u32 iterations) {
 	return result;
 }
 
-triangulation make_delaunay_triangulation(const point_cloud& sites_unsorted) {
-	reindexed_cloud sites = geom::to_sorted_vertical(sites_unsorted);
+Triangulation make_delaunay_triangulation(const Point_Cloud& sites_unsorted) {
+	Reindexed_Cloud sites = geom::to_sorted_vertical(sites_unsorted);
 	struct vert {
 		u32 right, left;
 	};
 	
-	std::map<id_line, id_line> quads = {};
+	std::map<Id_Line, Id_Line> quads = {};
 	std::vector<vert> hull = {};
 
 	auto print_hull = [&hull] () -> void {
@@ -55,7 +55,7 @@ triangulation make_delaunay_triangulation(const point_cloud& sites_unsorted) {
 	auto is_valid_quad_i = [&is_valid_quad, &sites](u32 a, u32 b, u32 c, u32 d) -> bool {
 		return is_valid_quad(sites.satat(a), sites.satat(b), sites.satat(c), sites.satat(d));
 	}; 
-	auto sort = [] (u32 x, u32 y) -> id_line { 
+	auto sort = [] (u32 x, u32 y) -> Id_Line { 
 		if(x < y) {
 			return {x, y};
 		} else {
@@ -88,7 +88,7 @@ triangulation make_delaunay_triangulation(const point_cloud& sites_unsorted) {
 	std::function<void(u32, u32, u32)> collapse;
 	collapse = [&quads, &is_valid_quad_i, &sort, &collapse, &flip_edge] (u32 a, u32 b, u32 d) -> void {
 		// printf("collapse: a = %d, b = %d, d = %d\n", a, b, d);
-		auto get_second = [] (id_line xy, u32 x) -> u32 {
+		auto get_second = [] (Id_Line xy, u32 x) -> u32 {
 			// printf("get_second: xy.a = %d xy.b = %d, x = %d\n", xy.a, xy.b, x);
 			return xy.a == x ? xy.b : xy.a;
 		};
@@ -195,7 +195,7 @@ triangulation make_delaunay_triangulation(const point_cloud& sites_unsorted) {
 			hull.push_back({0, 1});
 		}
 	};
-	triangulation result = {{}, &sites_unsorted};
+	Triangulation result = {{}, &sites_unsorted};
 	switch(sites.size()) {
 		case 2:
 			result.lines.push_back({{0, 1}, {-1u, -1u}});
@@ -217,15 +217,15 @@ triangulation make_delaunay_triangulation(const point_cloud& sites_unsorted) {
 	return result;
 }
 
-spatial_graph delaunay_to_voronoi(const triangulation& T) {
+Spatial_Graph delaunay_to_voronoi(const Triangulation& T) {
 	const float length = 10000.f; 
 	struct id_triangle {
 		u32 a, b, c;
 		bool operator<(id_triangle t2) const { return a == t2.a ? (b == t2.b ? c < t2.c : b < t2.b) : a < t2.a; }
 	};
-	const point_cloud* source = T.source;
+	const Point_Cloud* source = T.source;
 	std::vector<vec2> verts;
-	std::vector<id_line> edges;
+	std::vector<Id_Line> edges;
 	std::map<id_triangle, u32> tr_to_verts;
 
 	auto find_center = [&source] (u32 a, u32 b, u32 c) -> vec2 {
@@ -265,5 +265,5 @@ spatial_graph delaunay_to_voronoi(const triangulation& T) {
 		u32 p2 = add_point(l1.b, l1.a, l2.a, l2.b);
 		edges.push_back({p1, p2});
 	}
-	return spatial_graph::from_edge_list(edges, verts);
+	return Spatial_Graph::from_edge_list(edges, verts);
 }

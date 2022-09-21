@@ -13,7 +13,7 @@ void demo::even_slicing() {
 	bool pressed = false;
 	enum state_t {BASE, FINAL} state = BASE;
 	float win_size = 800;
-	box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();
+	Box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();
 
 	sf::Clock clock;
 
@@ -21,10 +21,10 @@ void demo::even_slicing() {
 	sf::RenderWindow window(sf::VideoMode(win_size, win_size), "polygons");
 	plotter plt(window);
 
-	poly P;
-	std::vector<poly> P_sliced;
-	point_cloud sites;
-	box2 box;
+	Poly P;
+	std::vector<Poly> P_sliced;
+	Point_Cloud sites;
+	Box2 box;
 	auto random_point = [&box] { return box * rand_vec2(); };
 
 	while(window.isOpen()) {
@@ -54,7 +54,7 @@ void demo::even_slicing() {
 							//auto voronoi_graph = delaunay_to_voronoi(make_delaunay_triangulation(sites));
 							auto voronoi_graph = make_voronoi_diagram_2(sites);
 							P_sliced = slice_poly(P, voronoi_graph);
-							box2 box = P.bounding_box();
+							Box2 box = P.bounding_box();
 						}
 					}
 				}

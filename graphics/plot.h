@@ -12,26 +12,26 @@ struct plotter {
 	};
 	struct base {
 		sf::RenderWindow* rw;
-		box2 box;
+		Box2 box;
 		sf::CircleShape point_spr, circle_spr;
 		sf::Sprite any_spr;
 
 		base(sf::RenderWindow& rw);
 		void draw(vec2 p);
-		void draw(const point_cloud& cloud);
-		void draw(const reindexed_cloud& cloud);
-		void draw(const poly& P);
-		void draw(const circle& C);
-		void draw(const surface& S);
-		void draw(line L, style s = LINE);
-		void draw(const triangulation& T);
-		void draw(const spatial_graph& T);
+		void draw(const Point_Cloud& cloud);
+		void draw(const Reindexed_Cloud& cloud);
+		void draw(const Poly& P);
+		void draw(const Circle& C);
+		void draw(const Surface& S);
+		void draw(Line L, style s = LINE);
+		void draw(const Triangulation& T);
+		void draw(const Spatial_Graph& T);
 	};
 	static std::unique_ptr<base> b;
 	static void init(sf::RenderWindow& rw);
 
 	plotter(sf::RenderWindow& rw);
-	// static void poly(const poly& P);
-	// static void circle(circle c);
+	// static void Poly(const Poly& P);
+	// static void Circle(Circle c);
 	base* operator->();
 };

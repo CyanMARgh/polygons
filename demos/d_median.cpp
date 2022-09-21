@@ -7,7 +7,7 @@
 #include "utils.h"
 #include <cmath>
 
-void demo::median_demo() {
+void demo::median() {
 	bool pressed = false;
 	u32 selected_id = 0;
 	float h = 0.f;
@@ -15,7 +15,7 @@ void demo::median_demo() {
 	using namespace geom;
 
 	float point_rad = 3, win_size = 800;
-	box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();
+	Box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();
 
 	sf::RenderWindow window(sf::VideoMode(win_size, win_size), "polygons");
 	plotter plt(window);
@@ -89,7 +89,7 @@ void demo::median_demo() {
 		plt->draw({C, D}, plotter::SEGMENT);
 		plt->draw({D, A}, plotter::SEGMENT);
 		printf("%c\n", is_valid_quad(A, B, C, D) ? '+' : '-');
-		plt->draw(circle::make(Q, h));
+		plt->draw(Circle::make(Q, h));
 		window.display();
 	}
 }

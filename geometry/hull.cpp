@@ -5,20 +5,20 @@
 #include <algorithm>
 #include <numeric>
 
-reindexed_cloud::reindexed_cloud(std::vector<u32> ids, const point_cloud* source) : std::vector<u32>(ids), source(source) { }
-vec2 reindexed_cloud::satat(u32 i) const { return sat(at(i)); }
-vec2 reindexed_cloud::sat(u32 i) const { return source->at(i); }
+Reindexed_Cloud::Reindexed_Cloud(std::vector<u32> ids, const Point_Cloud* source) : std::vector<u32>(ids), source(source) { }
+vec2 Reindexed_Cloud::satat(u32 i) const { return sat(at(i)); }
+vec2 Reindexed_Cloud::sat(u32 i) const { return source->at(i); }
 
 
-reindexed_cloud geom::to_sorted(const point_cloud& cloud) {
+Reindexed_Cloud geom::to_sorted(const Point_Cloud& cloud) {
 	u32 n = cloud.size();
-	const point_cloud* t = &cloud;
-	reindexed_cloud rc(std::vector<u32>(n), t);
+	const Point_Cloud* t = &cloud;
+	Reindexed_Cloud rc(std::vector<u32>(n), t);
 	for(u32 i = 0; i < n; i++) rc[i] = i;
 	std::sort(rc.begin(), rc.end(), [t](u32 a, u32 b) { return t->at(a).x < t->at(b).x || (t->at(a).x == t->at(b).x && t->at(a).y < t->at(b).y); });	
 	return rc;
 }
-reindexed_cloud geom::minimal_hull(const reindexed_cloud& cloud) {
+Reindexed_Cloud geom::minimal_hull(const Reindexed_Cloud& cloud) {
 	u32 n = cloud.size();
 	if(!n) return {};
 	std::vector<u32> upper = {0}, lower = {0};
@@ -57,17 +57,17 @@ reindexed_cloud geom::minimal_hull(const reindexed_cloud& cloud) {
 	for(u32& i : upper) i = cloud.at(i);
 	return {upper, cloud.source};
 }
-reindexed_cloud geom::minimal_hull(const point_cloud& cloud) {
+Reindexed_Cloud geom::minimal_hull(const Point_Cloud& cloud) {
 	return minimal_hull(to_sorted(cloud));
 }
-poly reindexed_cloud::make_poly() const {
+Poly Reindexed_Cloud::make_poly() const {
 	std::vector<vec2> vecs;
 	for(u32 i : *this) {
 		vecs.push_back(source->at(i));
 	}
 	return {vecs};
 }
-std::pair<bool, poly> geom::verify_minimal_hull(const reindexed_cloud& cloud) {
+std::pair<bool, Poly> geom::verify_minimal_hull(const Reindexed_Cloud& cloud) {
 	bool test = true;
 	for(u32 n = cloud.size(), i = 0; i < n; i++) {
 		vec2 a = cloud.satat(i), b = cloud.satat((i+1)%n), c = cloud.satat((i+2)%n);
@@ -78,7 +78,7 @@ std::pair<bool, poly> geom::verify_minimal_hull(const reindexed_cloud& cloud) {
 			//test = false;
 		}
 	}
-	poly p = cloud.make_poly();
+	Poly p = cloud.make_poly();
 	auto mz = geom::divide_to_monotonics(p, {0, 1});
 	for(u32 n = cloud.source->size(), i = 0; i < n; i++) {
 		auto f = std::find(cloud.begin(), cloud.end(), i); 
@@ -90,8 +90,8 @@ std::pair<bool, poly> geom::verify_minimal_hull(const reindexed_cloud& cloud) {
 	}
 	return {test, p};
 }
-std::tuple<bool, point_cloud, poly> geom::minimal_hull_test(u32 N) {
-	point_cloud cloud;
+std::tuple<bool, Point_Cloud, Poly> geom::minimal_hull_test(u32 N) {
+	Point_Cloud cloud;
 	cloud.resize(N);
 	for(u32 i = 0; i < N; i++) {
 		vec2 rv = rand_vec2();
@@ -101,12 +101,12 @@ std::tuple<bool, point_cloud, poly> geom::minimal_hull_test(u32 N) {
 		// cloud[i] = rv * vec2(.8f, .8f) + vec2(.1f, .1f);
 	}
 	auto hull = hull_by_circular(to_circular_sorted(cloud));
-	auto [r, poly] = verify_minimal_hull(hull);
-	return {r, cloud, poly};
+	auto [r, Poly] = verify_minimal_hull(hull);
+	return {r, cloud, Poly};
 }
-reindexed_cloud geom::to_circular_sorted(const point_cloud& cloud) {
+Reindexed_Cloud geom::to_circular_sorted(const Point_Cloud& cloud) {
  	u32 n = cloud.size();
- 	reindexed_cloud rc(std::vector<u32>(n), &cloud);
+ 	Reindexed_Cloud rc(std::vector<u32>(n), &cloud);
  	for(u32 i = 0; i < n; i++) rc[i] = i;
  	if(n < 3) return rc;
 
@@ -128,10 +128,10 @@ reindexed_cloud geom::to_circular_sorted(const point_cloud& cloud) {
 
 	return rc;
 }
-reindexed_cloud geom::hull_by_circular(const reindexed_cloud& cloud) {
+Reindexed_Cloud geom::hull_by_circular(const Reindexed_Cloud& cloud) {
 	u32 n = cloud.size();
 	if(n < 3) return cloud;
-	reindexed_cloud ans = {{cloud.at(0)}, cloud.source};
+	Reindexed_Cloud ans = {{cloud.at(0)}, cloud.source};
 	auto prev = [&](u32 i) {
 		vec2 v = ans.satat(i);
 		s32 j = i;
@@ -152,7 +152,7 @@ reindexed_cloud geom::hull_by_circular(const reindexed_cloud& cloud) {
 	}
 	return ans;
 }
-bool geom::is_right_convex(const poly& P) {
+bool geom::is_right_convex(const Poly& P) {
 	if(P.size < 3) return false;
 	for(s32 i = 0; i < P.size; i++) {
 		if(cross(P[i] - P[i - 1], P[i + 1] - P[i]) > 0) return false;
@@ -164,11 +164,11 @@ bool geom::is_right_convex(const poly& P) {
 }
 
 
-circle geom::welzl_2(vec2 a, vec2 b) {
+Circle geom::welzl_2(vec2 a, vec2 b) {
 	return {a, b};
 }
-circle geom::welzl_3(vec2 a, vec2 b, vec2 c) {
-	circle ab = welzl_2(a, b), bc = welzl_2(b, c), ca = welzl_2(c, a);
+Circle geom::welzl_3(vec2 a, vec2 b, vec2 c) {
+	Circle ab = welzl_2(a, b), bc = welzl_2(b, c), ca = welzl_2(c, a);
 	if(ab.inside(c)) return ab;
 	if(bc.inside(a)) return bc;
 	if(ca.inside(b)) return ca;
@@ -176,7 +176,7 @@ circle geom::welzl_3(vec2 a, vec2 b, vec2 c) {
 	vec2 o = circumcenter(a, b, c);
 	return {a, 2 * o - a};
 }
-circle geom::welzl_trivial(const reindexed_cloud& rng) {
+Circle geom::welzl_trivial(const Reindexed_Cloud& rng) {
 	u32 s = rng.size();
 	if(s == 0) {
 		return {};
@@ -189,27 +189,27 @@ circle geom::welzl_trivial(const reindexed_cloud& rng) {
 		return welzl_3(a, b, c);
 	}
 }
-circle geom::welzl(reindexed_cloud P, reindexed_cloud R) {
+Circle geom::welzl(Reindexed_Cloud P, Reindexed_Cloud R) {
 	u32 ps = P.size();
 	if(ps == 0 || R.size() == 3) return welzl_trivial(R);
 	s32 p = P.at(ps-1); P.pop_back();
-	circle D = welzl(P, R);
+	Circle D = welzl(P, R);
 	if(!D.inside(P.sat(p))) {
 		R.push_back(p);
 		D = welzl(P, R);
 	}
 	return D;
 }
-circle geom::welzl(point_cloud cloud) {
+Circle geom::welzl(Point_Cloud cloud) {
 	std::sort(cloud.begin(), cloud.end(), [](vec2 a, vec2 b){return a.x == b.x ? a.x < b.x : a.y < b.y; });
 	cloud.erase(std::unique(cloud.begin(), cloud.end()), cloud.end());
 
 	std::random_shuffle(cloud.begin(), cloud.end());
 	std::vector<u32> ids(cloud.size());	
 	std::iota(ids.begin(), ids.end(), 0), std::random_shuffle(ids.begin(), ids.end());
-	reindexed_cloud P = {ids, &cloud}, R = {{}, &cloud};
+	Reindexed_Cloud P = {ids, &cloud}, R = {{}, &cloud};
 
-	circle C = welzl(P, R);
+	Circle C = welzl(P, R);
 	// u32 q = 0;
 	// for(auto p : cloud) {
 	// 	if(!C.inside(p)) {

@@ -5,89 +5,89 @@
 #include "geometry.h"
 #include <map>
 
-struct intersection_list : std::vector<intersection> {};
-enum class seg_type {
+struct Intersection_List : std::vector<Intersection> {};
+enum class Seg_Type {
 	UP, DOWN, ANY
 };
 
-struct poly {
+struct Poly {
 	std::vector<vec2> points;
 	u32 size = 0;
 
-	poly();
-	poly(std::vector<vec2> other);
-	poly& operator=(std::vector<vec2> other);
-	poly(const poly& P);
+	Poly();
+	Poly(std::vector<vec2> other);
+	Poly& operator=(std::vector<vec2> other);
+	Poly(const Poly& P);
 
 	void add(vec2 p) ;
 	vec2& operator[](s32 i);
 	vec2 operator[](s32 i) const;
-	box2 bounding_box() const;
+	Box2 bounding_box() const;
 };
-struct monotonic_zones {
+struct Monotonic_Zones {
 	struct zone {
 		s32 a, b;
-		seg_type type;
+		Seg_Type type;
 	};
 	std::vector<zone> parts;
 };
-struct point_cloud : std::vector<vec2> { };
-struct reindexed_cloud : std::vector<u32> {
-	const point_cloud* source;
+struct Point_Cloud : std::vector<vec2> { };
+struct Reindexed_Cloud : std::vector<u32> {
+	const Point_Cloud* source;
 
-	reindexed_cloud(std::vector<u32> ids = {}, const point_cloud* source = nullptr);
+	Reindexed_Cloud(std::vector<u32> ids = {}, const Point_Cloud* source = nullptr);
 
-	poly make_poly() const;
+	Poly make_poly() const;
 
 	vec2 satat(u32 i) const;
 	vec2 sat(u32 i) const;
 };
 
-point_cloud to_cloud(const poly& P, const intersection_list& L);
-std::vector<poly> divide(const poly& P, const intersection_list& L);
+Point_Cloud to_cloud(const Poly& P, const Intersection_List& L);
+std::vector<Poly> divide(const Poly& P, const Intersection_List& L);
 
-struct id_line {
+struct Id_Line {
 	u32 a, b;
-	bool operator<(id_line l2) const;
-	bool operator==(id_line l2) const;
-	bool operator!=(id_line l2) const;
+	bool operator<(Id_Line l2) const;
+	bool operator==(Id_Line l2) const;
+	bool operator!=(Id_Line l2) const;
 };
 namespace geom {
 	//mass
-	float area(const poly& P);
-	vec2 area_X_center(const poly& P);
-	vec2 mass_center(const poly& P);
+	float area(const Poly& P);
+	vec2 area_X_center(const Poly& P);
+	vec2 mass_center(const Poly& P);
 
 	//monotonics
-	monotonic_zones divide_to_monotonics(const poly& P, vec2 n = {0, 1});
-	seg_type get_seg_type(const poly& P, s32 i, vec2 n = {0, 1});
+	Monotonic_Zones divide_to_monotonics(const Poly& P, vec2 n = {0, 1});
+	Seg_Type get_seg_type(const Poly& P, s32 i, vec2 n = {0, 1});
 
-	intersection inspect_zone(const poly& P, monotonic_zones::zone z, vec2 p, vec2 n = {0, 1});
-	intersection_list find_intersections(const poly& P, line l);
-	s32 is_inside_val(const poly& P, const monotonic_zones& mz, vec2 p, vec2 n = {0, 1});
-	std::pair<std::vector<poly>, point_cloud> divide(const poly& P, vec2 p0, vec2 n, float h, u32 N);
-	std::vector<poly> divide_evenly(const poly& P, line L, float h);
+	Intersection inspect_zone(const Poly& P, Monotonic_Zones::zone z, vec2 p, vec2 n = {0, 1});
+	Intersection_List find_intersections(const Poly& P, Line l);
+	s32 is_inside_val(const Poly& P, const Monotonic_Zones& mz, vec2 p, vec2 n = {0, 1});
+	std::pair<std::vector<Poly>, Point_Cloud> divide(const Poly& P, vec2 p0, vec2 n, float h, u32 N);
+	std::vector<Poly> divide_evenly(const Poly& P, Line L, float h);
 	
 	//welzl
-	circle welzl_2(vec2 a, vec2 b);
-	circle welzl_3(vec2 a, vec2 b, vec2 c);
-	circle welzl_trivial(const reindexed_cloud& rng);
-	circle welzl(reindexed_cloud P, reindexed_cloud R);
-	circle welzl(point_cloud cloud);
+	Circle welzl_2(vec2 a, vec2 b);
+	Circle welzl_3(vec2 a, vec2 b, vec2 c);
+	Circle welzl_trivial(const Reindexed_Cloud& rng);
+	Circle welzl(Reindexed_Cloud P, Reindexed_Cloud R);
+	Circle welzl(Point_Cloud cloud);
 
 	//?
-	bool has_self_intersections(const poly& P);
-	bool is_valid(const poly& P);
+	bool has_self_intersections(const Poly& P);
+	bool is_valid(const Poly& P);
 
 	struct invalid_read : public std::invalid_argument {
 		invalid_read(const std::string& filename);
 	};
 
 	//serialization
-	std::ofstream& operator<<(std::ofstream& fout, const poly& P);
-	std::ifstream& operator>>(std::ifstream& fin, poly& P);
+	std::ofstream& operator<<(std::ofstream& fout, const Poly& P);
+	std::ifstream& operator>>(std::ifstream& fin, Poly& P);
 
-	std::pair<float, vec2> bis_inter(line X, line Y, line Z);
+	std::pair<float, vec2> bis_inter(Line X, Line Y, Line Z);
 	struct sk_event {
 		float h;
 		vec2 Q;
@@ -113,11 +113,11 @@ namespace geom {
 		std::map<u32, u32> iv_to_iske;
 	};
 
-	reindexed_cloud to_sorted_vertical(const point_cloud&);
-	skeleton make_skeleton_from_convex(const poly& P);
-	skeleton_2 make_skeleton_from_convex_2(const poly& P);
-	std::vector<poly> scale_with_sceleton(const poly& P, const skeleton_2& S, float h);
-	std::vector<poly> buffer(const poly& P, float h);
+	Reindexed_Cloud to_sorted_vertical(const Point_Cloud&);
+	skeleton make_skeleton_from_convex(const Poly& P);
+	skeleton_2 make_skeleton_from_convex_2(const Poly& P);
+	std::vector<Poly> scale_with_sceleton(const Poly& P, const skeleton_2& S, float h);
+	std::vector<Poly> buffer(const Poly& P, float h);
 }
 
 
@@ -125,14 +125,14 @@ namespace geom {
 // 	struct edge {
 // 		u32 a, b;
 // 	};
-// 	struct intersection {
+// 	struct Intersection {
 // 		edge e0, e1;
 // 	};
 // 	std::vector<vec2> vts;
 // 	std::vector<edge> edges;
 
-// 	static graph from_poly(const poly& P);
-// 	std::vector<intersection> self_intersections() const;
-// 	void add_intersections(const std::vector<intersection>& inters);
-// 	std::vector<poly> extract_poly() const;
+// 	static graph from_poly(const Poly& P);
+// 	std::vector<Intersection> self_intersections() const;
+// 	void add_intersections(const std::vector<Intersection>& inters);
+// 	std::vector<Poly> extract_poly() const;
 // };

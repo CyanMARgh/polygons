@@ -12,7 +12,7 @@ void demo::skeleton() {
 	using namespace geom;
 
 	float win_size = 800;
-	box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();
+	Box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();
 
 	sf::Clock clock;
 
@@ -22,8 +22,8 @@ void demo::skeleton() {
 
 	sf::RenderWindow window(sf::VideoMode(win_size, win_size), "polygons");
 	plotter plt(window);
-	poly P;
-	std::vector<poly> P_buffered;
+	Poly P;
+	std::vector<Poly> P_buffered;
 	float h = 0.f;
 	float dh = 0.002f;
 	u32 I = 0;
@@ -56,7 +56,7 @@ void demo::skeleton() {
 				}
 			}
 		}
-		if(pressed && (!P.size || P[-1] != mpos) && (++I % 100 == 0)) P.add(mpos + rand_vec2() * 1.e-5f);
+		if(pressed && (!P.size || P[-1] != mpos) && (++I % 300 == 0)) P.add(mpos + rand_vec2() * 1.e-5f);
 		window.clear();
 
 		plt->draw(P);

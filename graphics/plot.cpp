@@ -33,24 +33,24 @@ void plotter::base::draw(vec2 p) {
 	point_spr.setPosition(box * p);
 	rw->draw(point_spr);
 }
-void plotter::base::draw(const circle& c) {
+void plotter::base::draw(const Circle& c) {
 	circle_spr.setPosition(box * c.center());
 	float r = c.rad() * box.s.y;
 	circle_spr.setRadius(r);
 	circle_spr.setOrigin(r, r);
 	rw->draw(circle_spr);
 }
-void plotter::base::draw(const point_cloud& cloud) {
+void plotter::base::draw(const Point_Cloud& cloud) {
 	for(auto p : cloud) {
 		draw(p);
 	}
 }
-void plotter::base::draw(const reindexed_cloud& cloud) {
+void plotter::base::draw(const Reindexed_Cloud& cloud) {
 	for(auto i : cloud) {
 		draw(cloud.sat(i));
 	}
 }
-void plotter::base::draw(const poly& P) {
+void plotter::base::draw(const Poly& P) {
 	if(P.size < 1) return;
 	sf::Vertex *vlines = new sf::Vertex[P.size + 1];
 	for(u32 i = 0; i <= P.size; i++) {
@@ -59,7 +59,7 @@ void plotter::base::draw(const poly& P) {
 	rw->draw(vlines, P.size + 1, sf::LineStrip);
 	delete[] vlines;
 }
-void plotter::base::draw(line L, style s) {
+void plotter::base::draw(Line L, style s) {
 	sf::Vertex vlines[2];
 	if(s == LINE) {
 		vec2 v = L.b - L.a;
@@ -70,7 +70,7 @@ void plotter::base::draw(line L, style s) {
 	vlines[1] = L.b;
 	rw->draw(vlines, 2, sf::LineStrip);
 }
-void plotter::base::draw(const surface& S) {
+void plotter::base::draw(const Surface& S) {
 	vec2u size = S.size;
 	sf::Image img;
 	img.create(size.x, size.y);
@@ -86,13 +86,13 @@ void plotter::base::draw(const surface& S) {
 	any_spr.setScale((vec2)rw->getSize() / (vec2)S.size);
 	rw->draw(any_spr);
 }
-void plotter::base::draw(const triangulation& T) {
+void plotter::base::draw(const Triangulation& T) {
 	for(auto t : T.lines) {
 		vec2 A = T.source->at(t.first.a), B = T.source->at(t.first.b);
 		draw({A, B}, style::SEGMENT);
 	}
 }
-void plotter::base::draw(const spatial_graph& T) {
+void plotter::base::draw(const Spatial_Graph& T) {
 	for(u32 i = 0, I = T.edges.size(); i < I; i++) {
 		for(auto j : T.edges[i]) {
 			draw({T.verts[i], T.verts[j]}, style::SEGMENT);

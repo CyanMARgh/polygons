@@ -6,7 +6,7 @@
 #include <iostream>
 #include "utils.h"
 
-std::vector<poly> geom::buffer(const poly& P, float h) {
+std::vector<Poly> geom::buffer(const Poly& P, float h) {
 	namespace bg = boost::geometry;
 	s32 M = 100000;
 
@@ -37,13 +37,13 @@ std::vector<poly> geom::buffer(const poly& P, float h) {
 		join_strategy, end_strategy, circle_strategy
 	);
 
-	std::vector<poly> Q2;
+	std::vector<Poly> Q2;
 	for(auto Q1i : Q1) {
 		bg::validity_failure_type failure;
 		bool valid = bg::is_valid(Q1i, failure);
 		if(!valid) continue;
 		auto er = bg::exterior_ring(Q1i);
-		poly Q2i;
+		Poly Q2i;
 		for(u32 i = 0, n = er.size() - 1; i < n; i++) {
 			b_vec2 v = er[i];
 			Q2i.add({((float)v.x()) / M, ((float)v.y()) / M});

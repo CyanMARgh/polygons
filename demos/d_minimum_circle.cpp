@@ -4,10 +4,10 @@
 #include "plot.h"
 
 void demo::minimum_circle() {
-	point_cloud cloud = {};
+	Point_Cloud cloud = {};
 	float point_rad = 3, win_size = 800, center_rad = 10, outer_thickness = 2;
 
-	box2 wintr = {win_size, -win_size,0,win_size}, inv = wintr.inv();
+	Box2 wintr = {win_size, -win_size,0,win_size}, inv = wintr.inv();
 
 	sf::CircleShape outer_circle(center_rad);
 	outer_circle.setOutlineThickness(outer_thickness);

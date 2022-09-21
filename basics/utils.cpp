@@ -62,7 +62,7 @@ vec2 circumcenter(vec2 A, vec2 B, vec2 C) {
 	float k1 = (len2(B) - len2(A)) / 2;
 	float k2 = (len2(C) - len2(A)) / 2;
 	vec2 v1 = B - A, v2 = C - A;
-	auto mat = mat2x2::from_rows(v1, v2);
+	auto mat = Mat2x2::from_rows(v1, v2);
 	//if(fabs(mat.det()) <= EPS) return A;
 	return mat.inv() * vec2(k1, k2);
 }

@@ -1,4 +1,3 @@
-#include <cstdio>
 #include <vector>
 #include <boost/polygon/voronoi.hpp>
 #include "utils.h"
@@ -10,8 +9,6 @@
 
 using boost::polygon::voronoi_builder;
 using boost::polygon::voronoi_diagram;
-using boost::polygon::x;
-using boost::polygon::y;
 
 namespace boost {
 	namespace polygon {
@@ -28,29 +25,28 @@ namespace boost {
 			}
 		};
 		template <>
-		struct geometry_concept<line> {
+		struct geometry_concept<Line> {
 			typedef segment_concept type;
 		};
 		template <>
-		struct segment_traits<line> {
+		struct segment_traits<Line> {
 			typedef float coordinate_type;
 			typedef vec2 point_type;
 
-			static inline point_type get(const line& segment, direction_1d dir) {
+			static inline point_type get(const Line& segment, direction_1d dir) {
 				return dir.to_int() ? segment.a : segment.b;
 			}
 		};
 	}
 }
 
-spatial_graph make_voronoi_diagram_2(point_cloud sites) {
+Spatial_Graph make_voronoi_diagram_2(Point_Cloud sites) {
 	const float M = 10000, Linf = 1000.f;
 	for(auto& p : sites) p *= M;
 	voronoi_diagram<double> vd;
 	construct_voronoi(sites.begin(), sites.end(), &vd);
-	spatial_graph result;
+	Spatial_Graph result;
 	u32 V = vd.vertices().size();
-	// printf("V: %d\n", V);
 	result.edges.resize(V);
 	result.verts.resize(V);
 
@@ -77,18 +73,14 @@ spatial_graph make_voronoi_diagram_2(point_cloud sites) {
 	};
 	for(auto e : vd.edges()) {
 		auto va = e.vertex0(), vb = e.vertex1();
-		// printf("va, vb: %x, %x\n", va, vb);
 		if(va < vb) continue;
 		u32 b;
 		if(!vb) {
-			// printf("b: inf\n");
 			b = add_inf_point(e);
 		} else {
-			// printf("b: regular\n");
 			b = add_point(e.vertex1());
 		}
 		u32 a = add_point(e.vertex0());
-		// printf("a, b : %d, %d\n", a, b);
 		result.edges[a].push_back(b); 
 		result.edges[b].push_back(a); 
 	}

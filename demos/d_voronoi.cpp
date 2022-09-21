@@ -13,7 +13,7 @@ void demo::voronoi() {
 	using namespace geom;
 
 	float win_size = 800;
-	box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();
+	Box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();
 
 	sf::Clock clock;
 	auto get_frame = [&clock] (u32 n) {
@@ -22,9 +22,9 @@ void demo::voronoi() {
 
 	sf::RenderWindow window(sf::VideoMode(win_size, win_size), "polygons");
 	plotter plt(window);
-	point_cloud cloud = {};
-	triangulation t = {};
-	spatial_graph voronoi = {}; 
+	Point_Cloud cloud = {};
+	Triangulation t = {};
+	Spatial_Graph voronoi = {}; 
 
 	while(window.isOpen()) {
 		vec2 mpos = inv * (vec2)sf::Mouse::getPosition(window);

@@ -15,25 +15,25 @@ typedef sf::Vector3<u32> vec3u;
 typedef sf::Vector3f vec3;
 
 //primitives
-struct line;
-struct circle;
-struct box2;
-struct mat2x2;
+struct Line;
+struct Circle;
+struct Box2;
+struct Mat2x2;
 
 //complex structures
-struct poly;
-struct spatial_graph;
+struct Poly;
+struct Spatial_Graph;
 //struct poly_group;
-struct point_cloud;
-struct monotonic_zones;
-struct reindexed_cloud;
-struct intersection;
-struct intersection_list;
-enum class seg_type;
+struct Point_Cloud;
+struct Monotonic_Zones;
+struct Reindexed_Cloud;
+struct Intersection;
+struct Intersection_List;
+enum class Seg_Type;
 
-struct surface;
-struct sliceable_group;
-struct spatial_graph;
-struct triangulation;
-struct id_line;
+struct Surface;
+struct Sliceable_Group;
+struct Spatial_Graph;
+struct Triangulation;
+struct Id_Line;
 //struct graph;

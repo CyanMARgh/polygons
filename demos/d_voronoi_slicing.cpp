@@ -9,7 +9,7 @@ void demo::voronoi_slicing() {
 	bool pressed = false;
 	enum state_t {BASE, POINTS, FINAL} state = BASE;
 	float win_size = 800;
-	box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();
+	Box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();
 
 	sf::Clock clock;
 	auto get_frame = [&clock] (u32 n) { return ((u32)(s32)(clock.getElapsedTime().asSeconds() * 20.f)) % (n + 1); };
@@ -17,10 +17,10 @@ void demo::voronoi_slicing() {
 	sf::RenderWindow window(sf::VideoMode(win_size, win_size), "polygons");
 	plotter plt(window);
 
-	poly P;
-	std::vector<poly> P_sliced;
-	spatial_graph voronoi_graph;
-	point_cloud sites;
+	Poly P;
+	std::vector<Poly> P_sliced;
+	Spatial_Graph voronoi_graph;
+	Point_Cloud sites;
 
 	while(window.isOpen()) {
 		vec2 mpos = inv * (vec2)sf::Mouse::getPosition(window);

@@ -5,20 +5,20 @@
 #include "surface.h"
 #include "sliceable_group.h"
 
-void demo::surface_demo() {
+void demo::surface() {
 	bool pressed = false;
 	using namespace geom;
 
 	float point_rad = 3, win_size = 800;
-	box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();
+	Box2 wintr = {win_size, -win_size, 0, win_size}, inv = wintr.inv();
 
 	sf::RenderWindow window(sf::VideoMode(win_size, win_size), "polygons");
 	plotter plt(window);
 
-	surface S({800, 800}, {1, 1});
-	sliceable_group SG;
+	Surface S({800, 800}, {1, 1});
+	Sliceable_Group SG;
 
-	poly P = {};
+	Poly P = {};
 	u32 I = 0;
 
 	while(window.isOpen()) {
@@ -41,19 +41,19 @@ void demo::surface_demo() {
 				case sf::Event::KeyPressed: {
 					if(e.key.code == sf::Keyboard::D) {
 						//printf("->D\n");
-						SG.update(pressed, sliceable_group::DRAW, mpos);
+						SG.update(pressed, Sliceable_Group::DRAW, mpos);
 					} else if(e.key.code == sf::Keyboard::M) {
 						//printf("->M\n");
-						SG.update(pressed, sliceable_group::MOVE, mpos);
+						SG.update(pressed, Sliceable_Group::MOVE, mpos);
 					} else if(e.key.code == sf::Keyboard::K) {
-						SG.update(pressed, sliceable_group::SLICE, mpos);						
+						SG.update(pressed, Sliceable_Group::SLICE, mpos);						
 					}
 				}
 			}
 		}
 
 		//if(I++ % 300 == 0)
-		SG.update(pressed, sliceable_group::NONE, mpos);
+		SG.update(pressed, Sliceable_Group::NONE, mpos);
 
 		S.clear();
 		S.draw(SG);

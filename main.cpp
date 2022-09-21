@@ -1,6 +1,4 @@
 #include "demos.h"
-#include <cmath>
-#include <iostream>
 
 int main() {
 	// demo::mass_center_and_separation();
@@ -12,11 +10,12 @@ int main() {
 	// demo::surface_demo();
 	// demo::median_demo();
 	// demo::fourier();
-	// demo::skeleton();
+	demo::skeleton();
 	// demo::rfoe();
 	// demo::voronoi();
 	// demo::spatial_graph_intersections();
 	// demo::voronoi_slicing();
-	demo::even_slicing();
+	// demo::even_slicing();
+
 	return 0;
 }
