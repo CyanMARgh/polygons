@@ -5,6 +5,7 @@
 #include "surface.h"
 #include "sliceable_group.h"
 #include "utils.h"
+#include "buffer.h"
 
 void demo::skeleton() {
 	bool pressed = false;

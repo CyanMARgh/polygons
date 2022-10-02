@@ -2,6 +2,7 @@
 #include "primitives.h"
 #include "polygon.h"
 #include "plot.h"
+#include "hull.h"
 
 void demo::minimum_circle() {
 	Point_Cloud cloud = {};

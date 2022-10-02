@@ -7,15 +7,16 @@ int main() {
 	// demo::trees();
 	// demo::minimum_circle();
 	// demo::poly_x_line_intersection();
-	// demo::surface_demo();
-	// demo::median_demo();
+	demo::surface();
+	// demo::median();
 	// demo::fourier();
-	demo::skeleton();
+	// demo::skeleton();
 	// demo::rfoe();
 	// demo::voronoi();
 	// demo::spatial_graph_intersections();
 	// demo::voronoi_slicing();
 	// demo::even_slicing();
-
+	// demo::holey_poly();
+	
 	return 0;
 }

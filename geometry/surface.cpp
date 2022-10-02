@@ -1,11 +1,12 @@
 #include "surface.h"
 #include "utils.h"
 #include "sliceable_group.h"
+#include "holey_polygon.h"
 
-border rasterize_monotomics(const Surface& S, const Poly& P, Monotonic_Zones::zone z) {
+Border rasterize_monotomics(const Surface& S, const Poly& P, Monotonic_Zones::zone z) {
 	vec2s pi_a = S.proj(P[z.a]), pi_b = S.proj(P[z.b]);
 	if (pi_a.y == pi_b.y) return {pi_a};
-	border B = {pi_a, pi_b};
+	Border B = {pi_a, pi_b};
 
 	auto find_x = [&S](vec2 a, vec2 b, float y) {
 		return  S.proj(vec2(lerp(a.x, b.x, rlerp(a.y, b.y, y)), y)).x;
@@ -48,7 +49,7 @@ void Surface::draw(const Point_Cloud& cloud, u32 value) {
 	}
 }
 
-void Surface::draw(const border& B, u32 value) {
+void Surface::draw(const Border& B, u32 value) {
 	for(auto pi : B) draw(pi, value);
 }
 
@@ -61,52 +62,85 @@ Surface::Surface(vec2u size, Box2 virtual_zone) : size(size) {
 void Surface::draw_border(const Poly& P, u32 value) {
 	auto mz = geom::divide_to_monotonics(P);
 	for(auto z : mz.parts) {
-		border B = rasterize_monotomics(*this, P, z);
+		Border B = rasterize_monotomics(*this, P, z);
 		draw(B, value);
 	}
 }
-void Surface::draw(const Poly& P, u32 value) {
-	if(P.size < 3) return;
+void Surface::rasterize_borders(const Poly& P, std::vector<Border>& borders, u32& S) {
 	auto mz = geom::divide_to_monotonics(P);
-	std::vector<border> borders = {};
-	u32 S = 0;
+	u32 dS = 0;
+	std::vector<Border> extra_borders;
 	for(auto z : mz.parts) {
-		border B = rasterize_monotomics(*this, P, z);
-		S += B.size();
-		borders.push_back(std::move(B));
+		Border B = rasterize_monotomics(*this, P, z);
+		dS += B.size();
+		extra_borders.push_back(std::move(B));
 	}
+	//TODO fix it
+	if(dS % 2 == 0) {
+		S += dS;
+		for(auto b : extra_borders) {
+			borders.push_back(b);
+		}
+	}
+}
+void Surface::draw(std::vector<Border>& borders, u32 value, u32 S) {
+	// printf("(0)\n");
 	std::vector<vec2s> BB(S);
+	// printf("(3)\n");
 	for(u32 i = 0, s = 0, n = borders.size(); i < n; i++) {
+		// printf("(4): %d %d %d\n", i, s, n);
 		std::copy(borders[i].begin(), borders[i].end(), BB.begin() + s);
 		s += borders[i].size();
+		// printf("(5)\n");
 	}
+	// printf("(2)\n");
 	if(S % 2)  {
-		printf("odd number of border pixels\n");
-		s32 h_sum = 0;
-		for(u32 i = 0, n = borders.size(); i < n; i++) {
-			vec2s pi_a = proj(P[mz.parts[i].a]), pi_b = proj(P[mz.parts[i].b]);
-			printf("%d-%d\n", pi_a.y, pi_b.y);
-			h_sum += pi_b.y - pi_a.y;
-		}
-		printf("h_sum: %d\n", h_sum);
 		return;
-		//throw std::runtime_error("odd number of border pixels\n");
+		throw std::runtime_error("odd number of Border pixels\n");
 	}
+	// printf("(9)\n");
 	sort(BB.begin(), BB.end(), [] (vec2s a, vec2s b) { return a.y == b.y ? a.x < b.x : a.y < b.y; });
-	for(u32 i = 0; i < S-1; i += 2) {
+	// printf("(13), S = %d\n", S);
+	for(u32 i = 0; i + 1 < S; i += 2) {
 		vec2s p0 = BB[i], p1 = BB[i + 1];
+		// printf("(10)\n");
 		if(p0.y != p0.y) {
-			throw std::runtime_error("border pixels heigth missmatch\n");
+			throw std::runtime_error("Border pixels heigth missmatch\n");
 		} else if(p0.y < 0) {
 			continue;
 		} else if(p0.y >= size.y) {
 			break;
 		}
+		// printf("(11)\n");
 		if(p1.x < 0) continue;
 		if(p0.x < 0) p0.x = 0;
 		if(p1.x >= size.x) p1.x = size.x;
 		for(s32 x = p0.x; x <= p1.x; x++) draw(vec2s(x, p0.y), value);
+		// printf("(12)\n");
+	}	
+	// printf("(1)\n");
+}
+void Surface::draw(const Poly& P, u32 value) {
+	if(P.size < 3) return;
+	std::vector<Border> borders = {};
+	u32 S = 0;
+	rasterize_borders(P, borders, S);
+	draw(borders, value, S);
+}
+void Surface::draw(const Holey_Poly& HP, u32 value) {
+	if(HP.outer.size < 3) return;
+	std::vector<Border> borders = {};
+	u32 S = 0;
+	// printf("(5)\n");
+	rasterize_borders(HP.outer, borders, S);
+	// printf("(6)\n");
+	for(auto& Pi : HP.holes) {
+		if(Pi.size < 3) continue;
+		rasterize_borders(Pi, borders, S);
 	}
+	// printf("(7)\n");
+	draw(borders, value, S);
+	// printf("(8)\n");
 }
 
 void Surface::draw(const Sliceable_Group& SG) {

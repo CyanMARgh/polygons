@@ -74,19 +74,23 @@ void Sliceable_Group::end_slice() {
 	Poly& T = *top();
 	//std::vector<Poly> p_sliced = divide(T, geom::find_intersections(T, L));
 	//std::vector<Poly> p_sliced = geom::divide(T, L.a, rrot(normalize(L.b - L.a)), 0.1f, 3);
-	std::vector<Poly> p_sliced = geom::divide_evenly(T, L, 0.1f);
+	std::vector<std::tuple<Poly, u32, u32>> p_sliced = geom::divide_to_squares(T, L, 0.1f);
 
+	auto make_color = [] (std::tuple<Poly, u32, u32>& Q) -> u32 { return mmod((std::get<1>(Q) + std::get<2>(Q)), 2) ? 0xFF00FFFF : 0xFFFF00FF; };
 
 	u32 s = order.size(), n = p_sliced.size();
 
-	mzs[order[s - 1]] = geom::divide_to_monotonics(p_sliced[0]);
-	polys[order[s - 1]] = p_sliced[0];
+	mzs[order[s - 1]] = geom::divide_to_monotonics(std::get<0>(p_sliced[0]));
+	polys[order[s - 1]] = std::get<0>(p_sliced[0]);
+	colors[order[s - 1]] = make_color(p_sliced[0]);
 
 	for(u32 i = 1; i < n; i++) {
-		mzs.push_back(geom::divide_to_monotonics(p_sliced[i]));
-		polys.push_back(p_sliced[i]);
+		mzs.push_back(geom::divide_to_monotonics(std::get<0>(p_sliced[i])));
+		auto& psi = p_sliced[i];
+		polys.push_back(std::get<0>(psi));
 		order.push_back(s + i - 1);
-		colors.push_back(color::lazy_any(colors.size()));
+		// colors.push_back(color::lazy_any(colors.size()));
+		colors.push_back(make_color(psi));
 	}
 }
 

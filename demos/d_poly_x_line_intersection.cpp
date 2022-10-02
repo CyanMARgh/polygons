@@ -18,9 +18,8 @@ void demo::poly_x_line_intersection() {
 	point.setOrigin(point_rad, point_rad);
 
 	Poly P;
-	std::vector<Poly> P_sliced;
+	std::vector<std::pair<Poly, u32>> P_sliced;
 	Line L;
-	Point_Cloud cloud;
 
 	sf::RenderWindow window(sf::VideoMode(win_size, win_size), "polygons");
 	plotter plt(window);
@@ -44,10 +43,7 @@ void demo::poly_x_line_intersection() {
 					} 
 				} else if(e.key.code == sf::Keyboard::S) {
 					if (state == FREE_LINE || state == HOLD_LINE) {
-						auto __ = geom::divide(P, L.a, rrot(normalize(L.b - L.a)), 0.1f, 3);
-						P_sliced = __.first;
-						cloud = __.second;
-						// P_sliced = divide(P, find_intersections(P, L));
+						P_sliced = geom::divide_to_stripes(P, L.a, rrot(normalize(L.b - L.a)), 0.1f, 3);
 						state = SLICED;
 					}
 				}
@@ -80,7 +76,6 @@ void demo::poly_x_line_intersection() {
 			}
 			case HOLD_LINE: {
 				L.b = mpos;
-				cloud = to_cloud(P, find_intersections(P, L));
 				break; 
 			}
 		}
@@ -89,12 +84,11 @@ void demo::poly_x_line_intersection() {
 		if(state == SLICED) {
 			//printf("here\n");
 			if(u32 s = P_sliced.size()) {
-				plt->draw(P_sliced[f_id % s]);
+				plt->draw(P_sliced[f_id % s].first);
 			}
 		} else {
 			plt->draw(P);
 		}
-		if(u32 s = cloud.size()) plt->draw(cloud[f_id % s]);
 		window.display();
 	}
 }

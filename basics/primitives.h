@@ -6,7 +6,7 @@ struct Line {
 };
 struct Intersection {
 	float t1, t2;
-	s32 id;
+	s32 id, pid = 0;
 };
 struct Circle {
 	vec2 f1 = {};

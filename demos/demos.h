@@ -16,4 +16,5 @@ namespace demo {
 	void spatial_graph_intersections();
 	void voronoi_slicing();
 	void even_slicing();
+	void holey_poly();
 }

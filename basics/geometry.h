@@ -1,4 +1,4 @@
-#pragma once
+  #pragma once
 
 #include <SFML/System.hpp>
 
@@ -22,6 +22,7 @@ struct Mat2x2;
 
 //complex structures
 struct Poly;
+struct Holey_Poly;
 struct Spatial_Graph;
 //struct poly_group;
 struct Point_Cloud;

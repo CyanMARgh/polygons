@@ -3,6 +3,7 @@
 #include "primitives.h"
 #include "utils.h"
 #include "spatial_graph.h"
+#include "buffer.h"
 
 std::vector<Poly> divide_evenly(const Poly& P, u32 guide, u32 iterations) {
 	Point_Cloud sites; sites.resize(guide);

@@ -13,4 +13,10 @@ namespace geom {
 	Reindexed_Cloud minimal_hull(const Reindexed_Cloud&);
 	std::pair<bool, Poly> verify_minimal_hull(const Reindexed_Cloud& cloud);
 	std::tuple<bool, Point_Cloud, Poly> minimal_hull_test(u32 N);
+
+	Circle welzl_2(vec2 a, vec2 b);
+	Circle welzl_3(vec2 a, vec2 b, vec2 c);
+	Circle welzl_trivial(const Reindexed_Cloud& rng);
+	Circle welzl(Reindexed_Cloud P, Reindexed_Cloud R);
+	Circle welzl(Point_Cloud cloud);
 }
