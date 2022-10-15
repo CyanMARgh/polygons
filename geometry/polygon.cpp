@@ -45,22 +45,30 @@ Box2 Poly::bounding_box() const {
 
 // is inside
 Intersection geom::inspect_zone( const Poly& P, Monotonic_Zones::zone z, vec2 p, vec2 n) {
-	float py = dot(p, n), ay = dot(P[z.a], n), by = dot(P[z.b], n), cy;
+	float h0 = dot(p, n);
+	float ay = dot(P[z.a], n), by = dot(P[z.b], n), cy;
 	float mi = fmin(ay, by), ma = fmax(ay, by);
 
-	if(py <= mi || py >= ma || z.type == Seg_Type::ANY) return {0.f, 0.f, -1};
+	if(z.type == Seg_Type::ANY) {
+		printf("Seg_Type = ANY\n");
+		return {0.f, 0.f, -1};
+	}
+	if(h0 <= mi || h0 >= ma) {
+		// printf("ignored segment at %f\n", h0);
+		return {0.f, 0.f, -1};
+	}
 	bool u_d = z.type == Seg_Type::UP;
 
 	for(u32 c;;) {
 		c = (z.a + z.b) / 2;
 		cy = dot(P[c], n);
 		if(z.a == c) break;
-		((dot(p, n) < cy) ^ u_d ? z.a : z.b) = c;
+		((h0 < cy) ^ u_d ? z.a : z.b) = c;
 	}
 
 	vec2 A = P[z.a], B = P[z.b];
-	float t1 = rlerp(dot(A, n), dot(B, n), dot(p, n));
-	float t2 = lerp(cross(A, n), cross(B, n), t1) - cross(p, n);
+	float t1 = rlerp(dot(A, n), dot(B, n), h0);
+	float t2 = lerp(cross(A, n), cross(B, n), t1) - h0;
 
 	return {t1, t2, z.a};	
 }
@@ -163,20 +171,19 @@ std::vector<std::pair<Poly, u32>> geom::divide_to_stripes(const Poly& P, vec2 p0
 	};
 	std::vector<intersection_2> il = {};
 	auto inter_coord = [&P] (intersection_2 i) -> vec2 { return lerp(P[i.cid], P[i.cid + 1], i.t1); };
-	auto process_poly = [n, N, h, p0, &il] (const Poly& poly) {
-		Monotonic_Zones mz = divide_to_monotonics(poly, n);
-		for(u32 row = 0; row < N; row++) {
-			for(u32 mzi = 0, mzs = mz.parts.size(); mzi < mzs; mzi++) {
-				auto z = mz.parts[mzi];
-				auto r = geom::inspect_zone(poly, z, p0 - row * h * n, n);
-				if(r.id != -1) {
-					intersection_2 I = {row, (u32)r.id % poly.size, r.t1, r.t2, z.type == Seg_Type::DOWN, row };
-					il.push_back(I);
-				}
+
+	Monotonic_Zones mz = divide_to_monotonics(P, n);
+	for(u32 row = 0; row < N; row++) {
+		for(u32 mzi = 0, mzs = mz.parts.size(); mzi < mzs; mzi++) {
+			auto z = mz.parts[mzi];
+			auto r = geom::inspect_zone(P, z, p0 - row * h * n, n);
+			if(r.id != -1) {
+				intersection_2 I = {row, (u32)r.id % P.size, r.t1, r.t2, z.type == Seg_Type::DOWN, row };
+				il.push_back(I);
 			}
 		}
-	};
-	process_poly(P);
+	}
+
 	if(!il.size()) return {{P, 0}};
 	u32 iln = il.size();
 	std::sort(il.begin(), il.end(), [] (intersection_2 a, intersection_2 b) { 
@@ -213,22 +220,19 @@ std::vector<std::pair<Poly, u32>> geom::divide_to_stripes(const Poly& P, vec2 p0
 	}
 	return result;
 }
-std::vector<std::pair<Poly, u32>> geom::divide_to_stripes(const Poly& P, Line L, float h) {
+std::vector<std::pair<Poly, u32>> geom::divide_to_stripes(const Poly& P, vec2 n, float h) {
 	float t = -1.e10f, d = 1.e10f;
-	vec2 nr = normalize(L.a - L.b);
-	vec2 n = lrot(nr);
 	for(auto p : P.points) {
 		float my = dot(p, n);
 		if(my > t) t = my;
 		if(my < d) d = my;
 	}
-	s32 N = (t - d) / h + 1; if(N < 0) N = 0;
-	return geom::divide_to_stripes(P, L.a + h * n * N, n, h, N * 2);
+	s32 N = (s32)((t - d) / h) + 1; if(N < 0) N = 0;
+	return geom::divide_to_stripes(P, (d + h * .5f) * n, -n, h, N);
 }
-std::vector<std::tuple<Poly, u32, u32>> geom::divide_to_squares(const Poly& P, Line L, float h) {
+std::vector<std::tuple<Poly, u32, u32>> geom::divide_to_squares(const Poly& P, vec2 n, float h) {
 	float l = 1.e10f, r = -l, t = r, d = l;
-	vec2 nr = normalize(L.a - L.b);
-	vec2 n = lrot(nr);
+	vec2 nr = rrot(n);
 	for(auto p : P.points) {
 		float mx = dot(p, nr), my = dot(p, n);
 		if(mx > r) r = mx;
@@ -236,16 +240,16 @@ std::vector<std::tuple<Poly, u32, u32>> geom::divide_to_squares(const Poly& P, L
 		if(my > t) t = my;
 		if(my < d) d = my;
 	}
-	s32 N = (t - d) / h + 2; if(N < 0) N = 0;
-	s32 N2 = (r - l) / h + 2; if(N2 < 0) N2 = 0;
-	vec2 p0 = (l + r + N * h) * .5f * nr + ((t + d + N * h) * .5f) * n;
+	s32 N = (s32)((t - d) / h) + 1; if(N < 0) N = 0;
+	s32 N2 = (s32)((r - l) / h) + 1; if(N2 < 0) N2 = 0;
+	vec2 p0 = (d + h * .5f) * n + (l + h * .5f) * nr;
 
-	std::vector<std::pair<Poly, u32>> hor_sliced = divide_to_stripes(P, p0, n, h, N);
+	std::vector<std::pair<Poly, u32>> hor_sliced = divide_to_stripes(P, p0, -n, h, N);
 	std::vector<std::vector<std::pair<Poly, u32>>> ver_sliced = {};
 	std::vector<std::tuple<Poly, u32, u32>> result;
 
 	for(auto &Pi : hor_sliced) {
-		auto vsi = divide_to_stripes(Pi.first, p0, nr, h, N2);
+		auto vsi = divide_to_stripes(Pi.first, p0, -nr, h, N2);
 		for(auto &Pij : vsi) {
 			result.push_back({std::move(Pij.first), Pij.second, Pi.second});
 		}

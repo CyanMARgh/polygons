@@ -4,26 +4,41 @@
 #include "utils.h"
 #include "spatial_graph.h"
 #include "buffer.h"
+#include "utils.h"
 
-std::vector<Poly> divide_evenly(const Poly& P, u32 guide, u32 iterations) {
-	Point_Cloud sites; sites.resize(guide);
+std::pair<std::vector<Poly>, std::vector<vec2>> divide_evenly(const Poly& P, u32 guide, u32 iterations) {
+	float eps = 1.e-3f;
+	u32 its_max = iterations * 2;
+
+	Point_Cloud sites, sites_new;
+	sites.resize(guide), sites_new.resize(guide);
+
 	Box2 box = P.bounding_box();
 	auto random_point = [&box] { return box * rand_vec2(); };
 	for(auto& p : sites) p = random_point();
-	// printf("(0)\n");
+
+	auto point_diff = [&sites, &sites_new] () -> float {
+		float diff = 0.f;
+		u32 n = sites.size();
+		for(u32 i = 0; i < n; i++) {
+			diff += len(sites[i] - sites_new[i]);
+		}
+		return diff / n;
+	};
+
 	std::vector<Poly> result;
-	for(u32 i = 0; i < iterations; i++) {
-		// printf("(1)\n");
+	for(u32 i = 0; i < its_max; i++) {
 		if(i) {
 			u32 n = result.size();
-			for(u32 j = 0; j < n && j < guide; j++) sites[j] = geom::mass_center(result[j]);
-			for(u32 j = n; j < guide; j++) sites[j] = random_point();
+			for(u32 j = 0; j < n && j < guide; j++) sites_new[j] = geom::mass_center(result[j]);
+			for(u32 j = n; j < guide; j++) sites_new[j] = random_point();
+			if(i > iterations && point_diff() < eps) return {result, sites};
+			sites = sites_new;
 		}
-		auto voronoi_graph = delaunay_to_voronoi(make_delaunay_triangulation(sites));
+		auto voronoi_graph = make_voronoi_diagram_2(sites);// delaunay_to_voronoi(make_delaunay_triangulation(sites));
 		result = slice_poly(P, voronoi_graph);
-		// printf("(2)\n");
 	}
-	return result;
+	return {result, sites};
 }
 
 Triangulation make_delaunay_triangulation(const Point_Cloud& sites_unsorted) {

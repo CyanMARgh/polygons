@@ -25,7 +25,7 @@ struct Poly;
 struct Holey_Poly;
 struct Spatial_Graph;
 //struct poly_group;
-struct Point_Cloud;
+typedef std::vector<vec2> Point_Cloud;
 struct Monotonic_Zones;
 struct Reindexed_Cloud;
 struct Intersection;

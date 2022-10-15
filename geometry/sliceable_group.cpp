@@ -74,7 +74,7 @@ void Sliceable_Group::end_slice() {
 	Poly& T = *top();
 	//std::vector<Poly> p_sliced = divide(T, geom::find_intersections(T, L));
 	//std::vector<Poly> p_sliced = geom::divide(T, L.a, rrot(normalize(L.b - L.a)), 0.1f, 3);
-	std::vector<std::tuple<Poly, u32, u32>> p_sliced = geom::divide_to_squares(T, L, 0.1f);
+	std::vector<std::tuple<Poly, u32, u32>> p_sliced = geom::divide_to_squares(T, normalize(L.b - L.a), 0.1f);
 
 	auto make_color = [] (std::tuple<Poly, u32, u32>& Q) -> u32 { return mmod((std::get<1>(Q) + std::get<2>(Q)), 2) ? 0xFF00FFFF : 0xFFFF00FF; };
 

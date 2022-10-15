@@ -56,7 +56,7 @@ Spatial_Graph make_voronoi_diagram_2(Point_Cloud sites) {
 		if(auto F = points_derefs.find(v); F == points_derefs.end()) {
 			u32 s = points_derefs.size();
 			points_derefs[v] = s;
-			result.verts[s] = vec2(v->x(), v->y()) / M;
+			result.verts[s] = vec2(v->x(), v->y()) / M; //TODO v == nullptr?
 			return s;
 		} else {
 			return F->second;
@@ -74,13 +74,17 @@ Spatial_Graph make_voronoi_diagram_2(Point_Cloud sites) {
 	for(auto e : vd.edges()) {
 		auto va = e.vertex0(), vb = e.vertex1();
 		if(va < vb) continue;
-		u32 b;
+		u32 b, a;
 		if(!vb) {
 			b = add_inf_point(e);
 		} else {
-			b = add_point(e.vertex1());
+			b = add_point(vb);
 		}
-		u32 a = add_point(e.vertex0());
+		if(!va) {
+			a = add_inf_point(*(e.twin()));
+		} else {
+			a = add_point(va);
+		}
 		result.edges[a].push_back(b); 
 		result.edges[b].push_back(a); 
 	}

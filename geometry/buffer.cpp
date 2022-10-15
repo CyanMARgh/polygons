@@ -272,7 +272,7 @@ geom::skeleton_2 geom::make_skeleton_from_convex_2(const Poly& P) {
 			iv_2, iv_3, INVALID_ID, 
 			sk_event_2::EDGE
 		};
-		printf("new edge event: [%u %u], %f\n", e.iv_l, e.iv_r, e.h);
+		// printf("new edge event: [%u %u], %f\n", e.iv_l, e.iv_r, e.h);
 		events.push(e);
 	};
 	auto is_inside_bis_triangle = [](vec2 A, vec2 B, vec2 C, vec2 D, vec2 Q) -> bool {
@@ -284,10 +284,10 @@ geom::skeleton_2 geom::make_skeleton_from_convex_2(const Poly& P) {
 		vec2 ab = b - a, cd = d - c, ef = f - e;
 		float lab = len(ab), lcd = len(cd), lef = len(ef);
 		float l0 = cross(Q - a, ab / lab), l1 = cross(Q - c, cd / lcd), l2 = cross(Q - e, ef / lef);
-		auto print = [] (vec2 P) -> void {printf("(%f %f) ", P.x, P.y);};
-		printf("points:\n");
-		print(a), print(b), print(c), print(d), print(e), print(f), print(Q);
-		printf("\n(6) lengths: %f %f %f\n", l0, l1, l2);
+		// auto print = [] (vec2 P) -> void {printf("(%f %f) ", P.x, P.y);};
+		// printf("points:\n");
+		// print(a), print(b), print(c), print(d), print(e), print(f), print(Q);
+		// printf("\n(6) lengths: %f %f %f\n", l0, l1, l2);
 		return ((l0 > l1) ^ (cross(ab, cd) > 0)) && ((l1 < l2) ^ (cross(cd, ef) > 0));
 	};
 	auto is_inside_bis_triangle_3 = [](vec2 a, vec2 b, vec2 c, vec2 d, vec2 Q) -> bool {
@@ -298,20 +298,20 @@ geom::skeleton_2 geom::make_skeleton_from_convex_2(const Poly& P) {
 	};
 
 	auto is_valid = [&P, &LAV, &right_iv, &is_inside_bis_triangle_3, &line_at_v, &edge_replace, &events] (sk_event_2 e) -> bool {
-		printf("checking: (%u %u %u, %s, h = %f)\n", e.iv_l, e.iv_r, e.iv_e, e.type == sk_event_2::SPLIT ? "split" : "edge/end", e.h);
+		// printf("checking: (%u %u %u, %s, h = %f)\n", e.iv_l, e.iv_r, e.iv_e, e.type == sk_event_2::SPLIT ? "split" : "edge/end", e.h);
 		bool def_cond = right_iv(e.iv_l) == e.iv_r && right_iv(e.iv_r) != e.iv_l;
 		if(e.type != sk_event_2::SPLIT) {
 			return def_cond;
 		} else {
 			if(right_iv(e.iv_e) == e.iv_e) {
-				printf("next(e.iv_e) = e.iv_e\n");
+				// printf("next(e.iv_e) = e.iv_e\n");
 				return false;
 			}
 			if(!def_cond) {
 				if(auto F = edge_replace.find({e.iv_l, e.iv_r}); F != edge_replace.end()) {
 					sk_event_2 el = e, er = e;
 					el.iv_r = F->second.first, er.iv_l = F->second.second;
-					printf("changed slice event: (%d-%d), %d -> (%d-%d), (%d-%d)\n", e.iv_l, e.iv_r, e.iv_e, el.iv_l, el.iv_r, er.iv_l, er.iv_r);
+					// printf("changed slice event: (%d-%d), %d -> (%d-%d), (%d-%d)\n", e.iv_l, e.iv_r, e.iv_e, el.iv_l, el.iv_r, er.iv_l, er.iv_r);
 					if(el.iv_r != -1u) events.push(el);
 					if(er.iv_l != -1u) events.push(er);
 				}
@@ -322,7 +322,7 @@ geom::skeleton_2 geom::make_skeleton_from_convex_2(const Poly& P) {
 				// bool ans = is_inside_bis_triangle_2(line_at_v(v_sl), line_at_v(v_s), line_at_v(v_sr), e.Q);
 				s32 io = v_s.origin;
 				bool ans = is_inside_bis_triangle_3(P[io - 1], P[io], P[io + 1], P[io + 2], e.Q);
-				printf("is_valid(%u %u %u): %d\n", e.iv_l, e.iv_r, e.iv_e, ans);
+				// printf("is_valid(%u %u %u): %d\n", e.iv_l, e.iv_r, e.iv_e, ans);
 				return ans;
 			}
 		}
@@ -349,7 +349,7 @@ geom::skeleton_2 geom::make_skeleton_from_convex_2(const Poly& P) {
 			e.iv_e = iv_rr;
 			e.type = sk_event_2::END;
 		}
-		printf("iv_to_iske[%u] = %lu\n", iv_new, S.size() + n);
+		// printf("iv_to_iske[%u] = %lu\n", iv_new, S.size() + n);
 		iv_to_iske[iv_new] = S.size() + n;
 		LAV.push_back(v_new);
 		if(!is_end) {
@@ -361,7 +361,7 @@ geom::skeleton_2 geom::make_skeleton_from_convex_2(const Poly& P) {
 		edge_replace[{iv_r, iv_rr}] = {-1u, iv_new};
 
 		S.push_back(e);
-		printf("(1) merged: %u, %u -> %u\n", iv_l, iv_r, iv_new);
+		// printf("(1) merged: %u, %u -> %u\n", iv_l, iv_r, iv_new);
 	};
 	auto slice = [n, &LAV, &add_edge_event, &S, &iv_to_iske, &edge_replace] (sk_event_2 e) -> void {
 		u32 iv_s = e.iv_l, iv_sr = e.iv_r, iv_x = e.iv_e;
@@ -377,13 +377,13 @@ geom::skeleton_2 geom::make_skeleton_from_convex_2(const Poly& P) {
 		//deleting x
 		v_x->iv_l = v_x->iv_r = iv_x;
 		//and push (later due to possible reallocation => pointers invalidation)
-		printf("iv_to_iske[%u] = %lu\n", iv_n, S.size() + n);
-		printf("iv_to_iske[%u] = %lu\n", iv_nr, S.size() + n);
+		// printf("iv_to_iske[%u] = %lu\n", iv_n, S.size() + n);
+		// printf("iv_to_iske[%u] = %lu\n", iv_nr, S.size() + n);
 		iv_to_iske[iv_n] = S.size() + n;
 		iv_to_iske[iv_nr] = S.size() + n;
 		LAV.push_back(v_n), LAV.push_back(v_nr);
 
-		printf("(0) sliced: %u-%u, %u -> %u-%u-%u %u-%u-%u\n", iv_s, iv_sr, iv_x, iv_s, iv_n, iv_xr, iv_xl, iv_nr, iv_sr);
+		// printf("(0) sliced: %u-%u, %u -> %u-%u-%u %u-%u-%u\n", iv_s, iv_sr, iv_x, iv_s, iv_n, iv_xr, iv_xl, iv_nr, iv_sr);
 		add_edge_event(iv_s);
 		add_edge_event(iv_n);
 		add_edge_event(iv_xl);
@@ -408,7 +408,7 @@ geom::skeleton_2 geom::make_skeleton_from_convex_2(const Poly& P) {
 			iv_s, iv_sr, iv_x,
 			sk_event_2::SPLIT
 		};
-		printf("new split event: [%u %u %u], %f\n", iv_s, iv_sr, iv_x, e.h);
+		// printf("new split event: [%u %u %u], %f\n", iv_s, iv_sr, iv_x, e.h);
 		events.push(e);
 	};
 	auto add_initial_split_events = [&P, n, &add_split_event] () -> void {
@@ -433,35 +433,35 @@ geom::skeleton_2 geom::make_skeleton_from_convex_2(const Poly& P) {
 		for(u32 i = 0, n = LAV.size(); i < n; i++) {
 			vert v = LAV[i];
 			if(v.iv_r == i) continue;
-			printf("[%u<-%u->%u: %u] ", v.iv_l, i, v.iv_r, v.origin);
+			// printf("[%u<-%u->%u: %u] ", v.iv_l, i, v.iv_r, v.origin);
 		}
-		printf("\n");
+		// printf("\n");
 	};
 
 	while(!events.empty()) {
 		sk_event_2 e = events.top();
 		events.pop();
 		if(!(e.h > 0)) {
-			printf("[%u %u %u]: h = %f < 0\n", e.iv_l, e.iv_r, e.iv_e, e.h);
+			// printf("[%u %u %u]: h = %f < 0\n", e.iv_l, e.iv_r, e.iv_e, e.h);
 			continue;
 		}
 		if(!is_valid(e)) continue;
 		if(e.type == sk_event_2::SPLIT) {
 			//printf("unimplemented!\n");
-			printf("(3)\n");
+			// printf("(3)\n");
 			slice(e);
 			// S.push_back(e);
 		} else {
-			printf("(4)\n");
+			// printf("(4)\n");
 			merge(e);
 			// S.push_back(e);
 		}
 		print_LAV();
 	}
-	printf("(2)\n");
+	// printf("(2)\n");
 	return {S, iv_to_iske};
 }
-std::vector<Poly> geom::scale_with_sceleton(const Poly& P, const skeleton_2& S, float h) {
+std::vector<Poly> geom::scale_with_skeleton(const Poly& P, const skeleton_2& S, float h) {
 	u32 n = P.size;
 	struct vert {
 		u32 origin;
@@ -561,7 +561,7 @@ std::vector<Poly> geom::scale_with_sceleton(const Poly& P, const skeleton_2& S, 
 			Pi.add(p);
 			j = k;
 		} while (j != i);
-		result.push_back(Pi);
+		if(Pi.size > 2) result.push_back(Pi);
 	}
 	return result;
 }

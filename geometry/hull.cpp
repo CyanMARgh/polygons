@@ -9,7 +9,6 @@ Reindexed_Cloud::Reindexed_Cloud(std::vector<u32> ids, const Point_Cloud* source
 vec2 Reindexed_Cloud::satat(u32 i) const { return sat(at(i)); }
 vec2 Reindexed_Cloud::sat(u32 i) const { return source->at(i); }
 
-
 Reindexed_Cloud geom::to_sorted(const Point_Cloud& cloud) {
 	u32 n = cloud.size();
 	const Point_Cloud* t = &cloud;
@@ -203,7 +202,7 @@ Circle geom::welzl(Reindexed_Cloud P, Reindexed_Cloud R) {
 Circle geom::welzl(Point_Cloud cloud) {
 	std::sort(cloud.begin(), cloud.end(), [](vec2 a, vec2 b){return a.x == b.x ? a.x < b.x : a.y < b.y; });
 	cloud.erase(std::unique(cloud.begin(), cloud.end()), cloud.end());
-
+	
 	std::random_shuffle(cloud.begin(), cloud.end());
 	std::vector<u32> ids(cloud.size());	
 	std::iota(ids.begin(), ids.end(), 0), std::random_shuffle(ids.begin(), ids.end());
@@ -219,4 +218,7 @@ Circle geom::welzl(Point_Cloud cloud) {
 	// if(q) printf("%u / %lu\n", q, cloud.size());
 
 	return C;
+}
+Circle geom::welzl_poly(Poly P) {
+	return geom::welzl(P.points);
 }

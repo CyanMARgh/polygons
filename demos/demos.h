@@ -17,4 +17,5 @@ namespace demo {
 	void voronoi_slicing();
 	void even_slicing();
 	void holey_poly();
+	void pattern_demo();
 }

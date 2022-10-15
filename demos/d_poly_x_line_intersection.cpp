@@ -83,8 +83,9 @@ void demo::poly_x_line_intersection() {
 
 		if(state == SLICED) {
 			//printf("here\n");
-			if(u32 s = P_sliced.size()) {
-				plt->draw(P_sliced[f_id % s].first);
+			if(P_sliced.size() > 1) {
+				plt->draw(P_sliced[1].first);
+				plt->draw(P_sliced[1].first[f_id]);
 			}
 		} else {
 			plt->draw(P);

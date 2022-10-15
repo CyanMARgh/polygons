@@ -17,4 +17,4 @@ void print_graph(const Spatial_Graph& G);
 
 std::vector<Poly> slice_poly(const Poly& P, Spatial_Graph& G);
 
-std::vector<Poly> divide_evenly(const Poly& P, u32 guide, u32 iterations);
+std::pair<std::vector<Poly>, std::vector<vec2>> divide_evenly(const Poly& P, u32 guide, u32 iterations);

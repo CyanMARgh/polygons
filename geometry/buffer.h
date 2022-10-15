@@ -32,6 +32,6 @@ namespace geom {
 	Reindexed_Cloud to_sorted_vertical(const Point_Cloud&);
 	skeleton make_skeleton_from_convex(const Poly& P);
 	skeleton_2 make_skeleton_from_convex_2(const Poly& P);
-	std::vector<Poly> scale_with_sceleton(const Poly& P, const skeleton_2& S, float h);
+	std::vector<Poly> scale_with_skeleton(const Poly& P, const skeleton_2& S, float h);
 	std::vector<Poly> buffer(const Poly& P, float h);
 }

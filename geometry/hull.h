@@ -19,4 +19,5 @@ namespace geom {
 	Circle welzl_trivial(const Reindexed_Cloud& rng);
 	Circle welzl(Reindexed_Cloud P, Reindexed_Cloud R);
 	Circle welzl(Point_Cloud cloud);
+	Circle welzl_poly(Poly P);
 }

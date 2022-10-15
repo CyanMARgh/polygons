@@ -7,7 +7,7 @@ int main() {
 	// demo::trees();
 	// demo::minimum_circle();
 	// demo::poly_x_line_intersection();
-	demo::surface();
+	// demo::surface();
 	// demo::median();
 	// demo::fourier();
 	// demo::skeleton();
@@ -17,6 +17,6 @@ int main() {
 	// demo::voronoi_slicing();
 	// demo::even_slicing();
 	// demo::holey_poly();
-	
+	demo::pattern_demo();
 	return 0;
 }

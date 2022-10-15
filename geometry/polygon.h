@@ -31,7 +31,6 @@ struct Monotonic_Zones {
 	};
 	std::vector<zone> parts;
 };
-struct Point_Cloud : std::vector<vec2> { };
 struct Reindexed_Cloud : std::vector<u32> {
 	const Point_Cloud* source;
 
@@ -66,8 +65,8 @@ namespace geom {
 	Intersection_List find_intersections(const Poly& P, Line l);
 	s32 is_inside_val(const Poly& P, const Monotonic_Zones& mz, vec2 p, vec2 n = {0, 1});
 	std::vector<std::pair<Poly, u32>> divide_to_stripes(const Poly& P, vec2 p0, vec2 n, float h, u32 N);
-	std::vector<std::pair<Poly, u32>> divide_to_stripes(const Poly& P, Line L, float h);
-	std::vector<std::tuple<Poly, u32, u32>> divide_to_squares(const Poly& P, Line L, float h);
+	std::vector<std::pair<Poly, u32>> divide_to_stripes(const Poly& P, vec2 n, float h);
+	std::vector<std::tuple<Poly, u32, u32>> divide_to_squares(const Poly& P, vec2 n, float h);
 	
 	//?
 	bool has_self_intersections(const Poly& P);
